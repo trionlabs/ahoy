@@ -120,6 +120,33 @@ Any service on World Chain can permissionlessly check: *"does this human have a 
 
 ---
 
+## XMTP SMS Bridge
+
+Ahoy bridges the phone network and decentralized messaging. Agents communicate via [XMTP](https://xmtp.org) - SMS is the fallback for legacy systems.
+
+```mermaid
+sequenceDiagram
+    participant Human
+    participant Twilio
+    participant Ahoy
+    participant XMTP
+    participant Agent
+
+    Human->>Twilio: Texts +1 555 867-5309
+    Twilio->>Ahoy: POST /webhook/sms
+    Ahoy->>XMTP: Forward via DM
+    XMTP->>Agent: "SMS from +1555...: Hello!"
+
+    Agent->>XMTP: "send +1555... Hi back!"
+    XMTP->>Ahoy: Message received
+    Ahoy->>Twilio: sendSms()
+    Twilio->>Human: SMS reply
+```
+
+Agents register their XMTP address to an ahoy number, then receive all SMS as XMTP messages and reply via XMTP - sent back as SMS. No phone needed on the agent side.
+
+---
+
 ## Quick Start
 
 ```bash
@@ -181,6 +208,7 @@ Open `http://localhost:4021/app` in a browser (dev mode) or in World App (produc
 | Agent discovery | [x402 Bazaar](https://docs.cdp.coinbase.com/x402/bazaar) |
 | Phone numbers | [Twilio](https://www.twilio.com) (SMS + Voice) |
 | Voice AI | [Claude](https://anthropic.com) (Anthropic API) |
+| Decentralized messaging | [XMTP](https://xmtp.org) (SMS <-> XMTP bridge) |
 | On-chain attestation | [EAS](https://docs.attest.org) on World Chain |
 
 ---
@@ -211,4 +239,7 @@ Open `http://localhost:4021/app` in a browser (dev mode) or in World App (produc
 | `FACILITATOR_URL` | no | x402 facilitator |
 | `DEPLOYER_PRIVATE_KEY` | no | EAS attestation signing key |
 | `WORLD_APP_ID` | no | World Mini App ID |
+| `XMTP_ENV` | no | XMTP network (dev/production) |
+| `XMTP_WALLET_KEY` | no | XMTP agent identity (EOA key) |
+| `XMTP_DB_ENCRYPTION_KEY` | no | XMTP local DB encryption |
 | `DEV_MODE` | no | Bypass auth for local testing |

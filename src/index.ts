@@ -33,6 +33,16 @@ import {
 } from "./storage.js";
 import { provisionNumber, makeAICall, twilio } from "./twilio.js";
 import { initEas, attestProvision, easEnabled } from "./eas.js";
+// XMTP loaded dynamically - native bindings may not be available
+let initXmtp: () => Promise<void> = async () => {};
+let forwardSmsToXmtp: (humanId: string, from: string, body: string) => Promise<void> = async () => {};
+try {
+  const xmtp = await import("./xmtp.js");
+  initXmtp = xmtp.initXmtp;
+  forwardSmsToXmtp = xmtp.forwardSmsToXmtp;
+} catch (e) {
+  console.log("[xmtp] native bindings not available, bridge disabled");
+}
 import {
   buildGreetingTwiml,
   buildResponseTwiml,
@@ -250,6 +260,7 @@ app.post("/webhook/sms", async (c) => {
 
   if (humanId) {
     addMessage(humanId, from, to, messageBody, messageSid);
+    forwardSmsToXmtp(humanId, from, messageBody).catch(console.error);
   }
 
   const twiml = new twilio.twiml.MessagingResponse();
@@ -479,6 +490,7 @@ app.get("/app/inbox", (c) => {
 // --- Start ---
 async function start() {
   await initEas();
+  await initXmtp();
   serve({ fetch: app.fetch, port: PORT }, () => {
     console.log(`ahoy listening on http://localhost:${PORT}`);
     console.log(`webhook URL: ${BASE_URL}/webhook/sms`);

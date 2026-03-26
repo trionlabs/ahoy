@@ -4,3 +4,4 @@ dist/
 *.log
 public/app.js
 .claude/
+xmtp-*.db3*

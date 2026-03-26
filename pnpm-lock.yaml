@@ -32,6 +32,9 @@ importers:
       '@x402/hono':
         specifier: ^2.0.0
         version: 2.8.0(ethers@6.16.0)(hono@4.12.9)(typescript@5.9.3)
+      '@xmtp/agent-sdk':
+        specifier: ^2.3.0
+        version: 2.3.0(typescript@5.9.3)(zod@3.25.76)
       dotenv:
         specifier: ^17.3.1
         version: 17.3.1
@@ -325,6 +328,32 @@ packages:
     peerDependenciesMeta:
       '@x402/paywall':
         optional: true
+
+  '@xmtp/agent-sdk@2.3.0':
+    resolution: {integrity: sha512-wMBuoZLDhX2mHKIKHCBaJxQfOhXooo3SAki4QCx+LrNFMBHOYgNkqQyynb7K44S92RgvrTcfIez6dbBzIMvvsQ==}
+    engines: {node: '>=22'}
+
+  '@xmtp/content-type-primitives@3.0.0':
+    resolution: {integrity: sha512-gxK6+k0ywOz39LFJjrUF3fOXWXR3aAmIkF7e0rFz7c27izDimZC5E2oja9iz/CYyzDS6lf9Pm31qRcGTMSYaHg==}
+
+  '@xmtp/content-type-primitives@3.0.1':
+    resolution: {integrity: sha512-qM8d3+9A2aKwYuHkkl84BnnECtKop21PMzu7l8NYsTX1qvEkM+sfIqCwiLw4CgYD87OMAzDVCxDNGj1E/g/pWg==}
+
+  '@xmtp/node-bindings@1.10.0':
+    resolution: {integrity: sha512-US/YvMP7RL1DkNeiZ75ZjEyvMwLIrEPn12dBj5h7lAesM2N5snwnstJ2NNk3LpW3kCNDdzwhe/G0ZSb0PhwNeg==}
+    engines: {node: '>=22'}
+
+  '@xmtp/node-bindings@1.8.0':
+    resolution: {integrity: sha512-dyppg1pQNsEdGH13RfsbkbXdnUdjufak6ea1YahjCROgmaJClDpMHcMcSfMzoJzASanU58MwEdCgYUF638NKgw==}
+    engines: {node: '>=22'}
+
+  '@xmtp/node-bindings@1.9.1':
+    resolution: {integrity: sha512-0cnAq7j8dPvxDZ5d7JpdbWTgSIKDiN421dxZj4sy1qw7QLOH4yTUKuuMY7CxoChoGa7/QPZGm+0sIIx/Gs2bAg==}
+    engines: {node: '>=22'}
+
+  '@xmtp/node-sdk@6.0.0':
+    resolution: {integrity: sha512-UMClg1+WkC3pfeHffJoZMYzhqsUa2wZpSJtIrpvBqUD+n1VYVQTfhTqGyaavVIPgITxjHBi/uMS/K18E4qDbPA==}
+    engines: {node: '>=22'}
 
   abitype@1.2.3:
     resolution: {integrity: sha512-Ofer5QUnuUdTFsBRwARMoWKOH1ND5ehwYhJ3OJ/BQO+StkwQjHw0XyVh4vDttzHB7QOFhPHa/o413PJ82gU/Tg==}
@@ -639,6 +668,10 @@ packages:
   ts-algebra@2.0.0:
     resolution: {integrity: sha512-FPAhNPFMrkwz76P7cdjdmiShwMynZYN6SgOujD1urY4oNm80Ou9oMdmbR45LotcKOXoy7wSmHkRFE6Mxbrhefw==}
 
+  ts-retry-promise@0.8.1:
+    resolution: {integrity: sha512-+AHPUmAhr5bSRRK5CurE9kNH8gZlEHnCgusZ0zy2bjfatUBDX0h6vGQjiT0YrGwSDwRZmU+bapeX6mj55FOPvg==}
+    engines: {node: '>=6'}
+
   tslib@2.7.0:
     resolution: {integrity: sha512-gLXCKdN1/j47AiHiOkJN69hJmcbGTHI0ImLmbYLHykhgeN0jVGola9yVjFgzCUklsZQMW55o+dW7IXv3RCXDzA==}
 
@@ -848,7 +881,7 @@ snapshots:
 
   '@scure/bip32@1.7.0':
     dependencies:
-      '@noble/curves': 1.9.7
+      '@noble/curves': 1.9.1
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
 
@@ -966,6 +999,37 @@ snapshots:
       - ethers
       - typescript
       - utf-8-validate
+
+  '@xmtp/agent-sdk@2.3.0(typescript@5.9.3)(zod@3.25.76)':
+    dependencies:
+      '@xmtp/content-type-primitives': 3.0.1
+      '@xmtp/node-sdk': 6.0.0
+      ts-retry-promise: 0.8.1
+      viem: 2.47.6(typescript@5.9.3)(zod@3.25.76)
+    transitivePeerDependencies:
+      - bufferutil
+      - typescript
+      - utf-8-validate
+      - zod
+
+  '@xmtp/content-type-primitives@3.0.0':
+    dependencies:
+      '@xmtp/node-bindings': 1.8.0
+
+  '@xmtp/content-type-primitives@3.0.1':
+    dependencies:
+      '@xmtp/node-bindings': 1.9.1
+
+  '@xmtp/node-bindings@1.10.0': {}
+
+  '@xmtp/node-bindings@1.8.0': {}
+
+  '@xmtp/node-bindings@1.9.1': {}
+
+  '@xmtp/node-sdk@6.0.0':
+    dependencies:
+      '@xmtp/content-type-primitives': 3.0.0
+      '@xmtp/node-bindings': 1.10.0
 
   abitype@1.2.3(typescript@5.9.3)(zod@3.25.76):
     optionalDependencies:
@@ -1316,6 +1380,8 @@ snapshots:
       valid-url: 1.0.9
 
   ts-algebra@2.0.0: {}
+
+  ts-retry-promise@0.8.1: {}
 
   tslib@2.7.0: {}
 

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "bash scripts/fix-xmtp-bindings.sh 2>/dev/null || true",
     "build:client": "esbuild src/client.ts --bundle --outfile=public/app.js --format=esm --target=es2020 --minify",
     "dev": "pnpm run build:client && tsx watch src/index.ts",
     "start": "pnpm run build:client && tsx src/index.ts"
@@ -17,6 +18,7 @@
     "@x402/evm": "^2.0.0",
     "@x402/extensions": "^2.8.0",
     "@x402/hono": "^2.0.0",
+    "@xmtp/agent-sdk": "^2.3.0",
     "dotenv": "^17.3.1",
     "hono": "^4.0.0",
     "twilio": "^5.0.0",
