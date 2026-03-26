@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ahoy — sybil dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #050508;
+      color: #e0e0e0;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .container { display: flex; height: 100vh; width: 100vw; }
+
+    .canvas-area { flex: 1; position: relative; border-right: 1px solid #111; }
+    canvas { display: block; }
+
+    .sidebar {
+      width: 380px;
+      display: flex;
+      flex-direction: column;
+      padding: 2rem 1.5rem;
+      gap: 1.5rem;
+      overflow: hidden;
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #fff 0%, #666 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .tagline { font-size: 0.75rem; color: #444; margin-top: 0.25rem; }
+
+    .counters { display: flex; gap: 1rem; }
+    .counter {
+      flex: 1;
+      background: #0a0a0f;
+      border: 1px solid #151520;
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .counter-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      transition: color 0.3s;
+    }
+    .counter-label {
+      font-size: 0.65rem;
+      color: #444;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 0.25rem;
+    }
+    .c-agents .counter-value { color: #555; }
+    .c-humans .counter-value { color: #7c8aff; }
+    .c-numbers .counter-value { color: #51cf66; }
+
+    .arrow { display: flex; align-items: center; color: #222; font-size: 1.2rem; }
+
+    .comparison {
+      background: #0a0a0f;
+      border: 1px solid #151520;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      display: none;
+      gap: 0.5rem;
+      flex-direction: column;
+    }
+    .comparison.visible { display: flex; }
+    .comp-row { display: flex; justify-content: space-between; font-size: 0.85rem; }
+    .comp-without { color: #ff6b6b; }
+    .comp-with { color: #51cf66; }
+
+    .table-header {
+      font-size: 0.65rem;
+      color: #333;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .number-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .number-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0a0a0f;
+      border: 1px solid #151520;
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      font-size: 0.8rem;
+      animation: fadeIn 0.3s ease;
+    }
+    .nr-human { color: #7c8aff; font-weight: 500; }
+    .nr-phone { color: #51cf66; font-variant-numeric: tabular-nums; }
+    .nr-agents { color: #444; font-size: 0.7rem; }
+
+    .status-bar {
+      padding: 0.8rem 1rem;
+      background: #0a0a0f;
+      border: 1px solid #151520;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      color: #444;
+      text-align: center;
+      min-height: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .status-bar.calling {
+      color: #51cf66;
+      border-color: #1a3a1a;
+      background: #060f06;
+      animation: pulse 1.5s ease infinite;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="canvas-area">
+      <canvas id="canvas"></canvas>
+    </div>
+    <div class="sidebar">
+      <div>
+        <div class="logo">ahoy</div>
+        <div class="tagline">one human. one number. every agent shares it.</div>
+      </div>
+
+      <div class="counters">
+        <div class="counter c-agents">
+          <div class="counter-value" id="cnt-agents">0</div>
+          <div class="counter-label">Agents</div>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="counter c-humans">
+          <div class="counter-value" id="cnt-humans">0</div>
+          <div class="counter-label">Humans</div>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="counter c-numbers">
+          <div class="counter-value" id="cnt-numbers">0</div>
+          <div class="counter-label">Numbers</div>
+        </div>
+      </div>
+
+      <div class="comparison" id="comparison">
+        <div class="comp-row">
+          <span>Without ahoy</span>
+          <span class="comp-without" id="comp-without">0 numbers burned</span>
+        </div>
+        <div class="comp-row">
+          <span>With ahoy</span>
+          <span class="comp-with" id="comp-with">0 numbers</span>
+        </div>
+      </div>
+
+      <div class="table-header">Provisioned numbers</div>
+      <div class="number-list" id="number-list"></div>
+
+      <div class="status-bar" id="status">Waiting for agents...</div>
+    </div>
+  </div>
+
+  <script>
+    const HUMAN_COLORS = [
+      '#7c8aff', '#ff6b9d', '#51cf66', '#ffd43b', '#ff922b',
+      '#cc5de8', '#22b8cf', '#ff8787', '#69db7c', '#e599f7',
+      '#74c0fc', '#f783ac', '#a9e34b', '#ffa94d', '#3bc9db',
+    ];
+
+    const agents = [];
+    const humanClusters = {};
+    let totalAgents = 0, totalHumans = 0, totalNumbers = 0, humanColorIndex = 0;
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      const area = canvas.parentElement;
+      canvas.width = area.clientWidth;
+      canvas.height = area.clientHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function randomEdgePosition() {
+      const side = Math.floor(Math.random() * 4);
+      const w = canvas.width, h = canvas.height, m = 20;
+      switch (side) {
+        case 0: return { x: m + Math.random() * (w - 2 * m), y: -10 };
+        case 1: return { x: w + 10, y: m + Math.random() * (h - 2 * m) };
+        case 2: return { x: m + Math.random() * (w - 2 * m), y: h + 10 };
+        case 3: return { x: -10, y: m + Math.random() * (h - 2 * m) };
+      }
+    }
+
+    function clusterCenter(humanId) {
+      const keys = Object.keys(humanClusters);
+      const idx = keys.indexOf(humanId);
+      const total = Math.max(keys.length, 1);
+      const cx = canvas.width / 2, cy = canvas.height / 2;
+      const radius = Math.min(cx, cy) * 0.55;
+      const angle = (idx / total) * Math.PI * 2 - Math.PI / 2;
+      return { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
+    }
+
+    function recalcClusterPositions() {
+      for (const hid of Object.keys(humanClusters)) {
+        const pos = clusterCenter(hid);
+        humanClusters[hid].centerX = pos.x;
+        humanClusters[hid].centerY = pos.y;
+      }
+      for (const a of agents) {
+        if (a.humanId && humanClusters[a.humanId]) {
+          const c = humanClusters[a.humanId];
+          const spread = 30 + Math.sqrt(c.agentCount) * 8;
+          a.targetX = c.centerX + (Math.random() - 0.5) * spread;
+          a.targetY = c.centerY + (Math.random() - 0.5) * spread;
+        }
+      }
+    }
+
+    function addAgent(id, humanId) {
+      const pos = randomEdgePosition();
+      const color = getHumanColor(humanId);
+      if (!humanClusters[humanId]) {
+        humanClusters[humanId] = { color, centerX: 0, centerY: 0, number: null, agentCount: 0 };
+        recalcClusterPositions();
+      }
+      humanClusters[humanId].agentCount++;
+      const c = humanClusters[humanId];
+      const spread = 30 + Math.sqrt(c.agentCount) * 8;
+      agents.push({
+        id, x: pos.x, y: pos.y,
+        targetX: c.centerX + (Math.random() - 0.5) * spread,
+        targetY: c.centerY + (Math.random() - 0.5) * spread,
+        humanId, color, alpha: 0, radius: 3,
+      });
+    }
+
+    function getHumanColor(humanId) {
+      if (humanClusters[humanId]) return humanClusters[humanId].color;
+      return HUMAN_COLORS[humanColorIndex++ % HUMAN_COLORS.length];
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const [hid, c] of Object.entries(humanClusters)) {
+        if (c.number) {
+          ctx.save();
+          ctx.font = '11px SF Mono, Consolas, monospace';
+          ctx.fillStyle = c.color + '44';
+          ctx.textAlign = 'center';
+          ctx.fillText(c.number, c.centerX, c.centerY - 40 - Math.sqrt(c.agentCount) * 5);
+          ctx.restore();
+        }
+      }
+      for (const a of agents) {
+        a.x += (a.targetX - a.x) * 0.06;
+        a.y += (a.targetY - a.y) * 0.06;
+        a.alpha = Math.min(a.alpha + 0.05, 0.85);
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, a.radius + 4, 0, Math.PI * 2);
+        ctx.fillStyle = a.color + '15';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
+        ctx.fillStyle = a.color + Math.round(a.alpha * 255).toString(16).padStart(2, '0');
+        ctx.fill();
+      }
+      requestAnimationFrame(render);
+    }
+    render();
+
+    const evtSource = new EventSource('/dashboard/events');
+
+    evtSource.addEventListener('agent_request', (e) => {
+      totalAgents++;
+      document.getElementById('cnt-agents').textContent = totalAgents;
+    });
+
+    evtSource.addEventListener('human_resolved', (e) => {
+      const d = JSON.parse(e.data);
+      if (!humanClusters[d.humanId]) {
+        totalHumans++;
+        document.getElementById('cnt-humans').textContent = totalHumans;
+      }
+      addAgent(d.agentId, d.humanId);
+    });
+
+    evtSource.addEventListener('number_assigned', (e) => {
+      const d = JSON.parse(e.data);
+      totalNumbers++;
+      document.getElementById('cnt-numbers').textContent = totalNumbers;
+      if (humanClusters[d.humanId]) humanClusters[d.humanId].number = d.phoneNumber;
+      const list = document.getElementById('number-list');
+      const existing = document.querySelector(`[data-human="${d.humanId}"]`);
+      if (!existing) {
+        const row = document.createElement('div');
+        row.className = 'number-row';
+        row.dataset.human = d.humanId;
+        row.innerHTML = `
+          <span class="nr-human">${d.humanId}</span>
+          <span class="nr-phone">${d.phoneNumber}</span>
+          <span class="nr-agents" data-count="1">1 agent</span>`;
+        list.appendChild(row);
+      }
+    });
+
+    evtSource.addEventListener('cached', (e) => {
+      const d = JSON.parse(e.data);
+      addAgent(d.agentId, d.humanId);
+      const row = document.querySelector(`[data-human="${d.humanId}"] .nr-agents`);
+      if (row) {
+        const count = parseInt(row.dataset.count || '1') + 1;
+        row.dataset.count = count;
+        row.textContent = `${count} agents`;
+      }
+    });
+
+    evtSource.addEventListener('complete', (e) => {
+      const d = JSON.parse(e.data);
+      const comp = document.getElementById('comparison');
+      comp.classList.add('visible');
+      document.getElementById('comp-without').textContent = `${d.totalAgents} numbers burned`;
+      document.getElementById('comp-with').textContent = `${d.totalNumbers} numbers`;
+      document.getElementById('status').textContent =
+        `${d.totalAgents} agents \u2192 ${d.totalHumans} humans \u2192 ${d.totalNumbers} numbers`;
+    });
+
+    evtSource.addEventListener('calling', (e) => {
+      const d = JSON.parse(e.data);
+      const status = document.getElementById('status');
+      status.textContent = `\u260E Calling ${d.to}...`;
+      status.classList.add('calling');
+    });
+  </script>
+</body>
+</html>
