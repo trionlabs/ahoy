@@ -37,7 +37,7 @@ async function emit(type: string, data: Record<string, unknown>) {
 
 async function main() {
   const humans = generateHumans(NUM_HUMANS);
-  const assigned = new Map<string, string>(); // humanId → fakeNumber
+  const assigned = new Map<string, string>(); // humanId -> fakeNumber
   let numberCounter = 0;
 
   console.log(`Sybil dashboard: ${NUM_AGENTS} agents, ${NUM_HUMANS} humans`);
@@ -67,7 +67,7 @@ async function main() {
       await sleep(80);
       await emit("number_assigned", { humanId, phoneNumber: fakeNumber });
     } else {
-      // Existing human — cached
+      // Existing human - cached
       await emit("human_resolved", { agentId, humanId, isNew: false });
       await sleep(20);
       await emit("cached", { agentId, humanId, phoneNumber: assigned.get(humanId) });
@@ -82,7 +82,7 @@ async function main() {
     totalNumbers: assigned.size,
   });
 
-  console.log(`\nDone: ${NUM_AGENTS} agents → ${NUM_HUMANS} humans → ${assigned.size} numbers`);
+  console.log(`\nDone: ${NUM_AGENTS} agents -> ${NUM_HUMANS} humans -> ${assigned.size} numbers`);
 
   // Optional: trigger a call
   if (CALL_TO) {

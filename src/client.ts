@@ -182,7 +182,7 @@ async function doPay(token: "wld" | "usdc") {
         reference,
         to: payTo,
         tokens,
-        description: "Ahoy — phone number provisioning",
+        description: "Ahoy - phone number provisioning",
       };
 
       const { finalPayload } = await MiniKit.commandsAsync.pay(payload);

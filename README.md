@@ -1,0 +1,214 @@
+# ahoy
+
+> "Phone numbers present another interesting case. Agents will increasingly need phone numbers for two-factor authentication and signups. Without proof of unique human, thousands of agents could each acquire unique phone numbers, overwhelming telecommunications infrastructure. With AgentKit, a service can ensure that each unique human receives one phone number, shared across all of their agents."
+> - [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)
+
+---
+
+## How It Works
+
+```mermaid
+graph LR
+    H[Human with World ID] -->|registers agents| AB[AgentBook on-chain]
+
+    A1[Agent A] -->|wallet + payment| AHOY[Ahoy Server]
+    A2[Agent B] -->|wallet + payment| AHOY
+    A3[Agent C] -->|wallet + payment| AHOY
+
+    AHOY -->|resolve wallet -> humanId| AB
+    AHOY -->|has number?| S{Storage}
+
+    S -->|NO| TW[Twilio: provision number]
+    S -->|YES| RET[Return existing number]
+    TW --> RET
+
+    AHOY -->|attestation| EAS[EAS on World Chain]
+
+    RET -->|+1 555 867-5309| A1
+    RET -->|+1 555 867-5309| A2
+    RET -->|+1 555 867-5309| A3
+```
+
+All three agents get the same number. One human, one number.
+
+---
+
+## The Sybil Attack
+
+Without ahoy, one person spins up 100 agents and grabs 100 phone numbers.
+
+With ahoy, those 100 agents collapse to the humans behind them:
+
+```
+100 agents -> 5 unique humans -> 5 phone numbers
+
+  Without ahoy: 100 numbers burned
+  With ahoy:    5 numbers provisioned
+```
+
+---
+
+## Two Ways In
+
+```mermaid
+graph TB
+    subgraph "Agent Flow"
+        AG[AI Agent with wallet] -->|x402 payment USDC| X4[x402 Middleware]
+        X4 -->|verify wallet| AK[AgentKit: wallet -> humanId]
+        AK --> PROV[Provision or return number]
+    end
+
+    subgraph "Mini App Flow"
+        USER[Human in World App] -->|Orb scan| WID[World ID Verify]
+        WID -->|nullifier_hash = humanId| PAY[Pay 0.5 WLD or $0.10 USDC]
+        PAY --> PROV
+    end
+
+    PROV -->|new number| TW[Twilio: SMS + Voice AI]
+    PROV -->|attestation| EAS[EAS on World Chain]
+```
+
+**Agent API**: AI agents pay via x402, prove humanity via AgentKit, get a number programmatically.
+
+**Mini App**: Humans open ahoy in World App, verify with Orb, pay in WLD or USDC, manage their number.
+
+Both flows enforce the same invariant. Both produce the same EAS attestation.
+
+---
+
+## Every Number Has An AI
+
+Provisioned numbers come with both SMS and voice. Call the number and talk to an AI assistant powered by Claude:
+
+```mermaid
+sequenceDiagram
+    participant Caller
+    participant Twilio
+    participant Ahoy
+    participant Claude
+
+    Caller->>Twilio: Calls +1 555 867-5309
+    Twilio->>Ahoy: POST /webhook/voice
+    Ahoy->>Twilio: TwiML greeting + Gather
+    Twilio->>Caller: "Hello! I'm Ahoy. How can I help?"
+
+    Caller->>Twilio: "What's my account balance?"
+    Twilio->>Ahoy: POST /webhook/voice/gather
+    Ahoy->>Claude: messages.create()
+    Claude->>Ahoy: Response text
+    Ahoy->>Twilio: TwiML Say + Gather
+    Twilio->>Caller: AI speaks response
+
+    Note over Caller,Claude: Loop continues until hangup
+```
+
+Text the number and the message lands in the agent's inbox, readable via `GET /messages`.
+
+---
+
+## On-Chain Privacy
+
+When ahoy provisions a number, it writes an EAS attestation to World Chain:
+
+```
+Schema: uint256 humanId, bool isVerified
+```
+
+No phone data goes on-chain. The attestation only proves that a given humanId has a verified phone number, not what the number is. Phone numbers stay server-side only.
+
+Any service on World Chain can permissionlessly check: *"does this human have a verified phone number?"* without seeing the number itself.
+
+---
+
+## Quick Start
+
+```bash
+# Install
+npm install
+
+# Configure
+cp .env.example .env
+# Fill in: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, PAY_TO_ADDRESS, ANTHROPIC_API_KEY, BASE_URL
+
+# Run
+npm run dev
+```
+
+```bash
+# Provision a number (DEV_MODE=true)
+curl -X POST http://localhost:4021/provision -H "X-Dev-Human-Id: alice"
+# -> {"phoneNumber":"+13185551234","provisioned":true}
+
+# Same human, same number
+curl -X POST http://localhost:4021/provision -H "X-Dev-Human-Id: alice"
+# -> {"phoneNumber":"+13185551234","provisioned":false}
+```
+
+### Sybil Demo
+
+```bash
+# Simulated (free, no Twilio calls)
+npx tsx scripts/sybil-demo.ts 100 5 --dry-run
+
+# Live (provisions real numbers)
+npx tsx scripts/sybil-demo.ts 50 3
+```
+
+### AI Voice Call
+
+```bash
+# Call someone, they talk to Claude
+npx tsx scripts/call.ts +15551234567
+
+# One-time TTS message
+npx tsx scripts/call.ts +15551234567 --tts "Hello from ahoy!"
+```
+
+### Mini App
+
+Open `http://localhost:4021/app` in a browser (dev mode) or in World App (production).
+
+---
+
+## Stack
+
+| Layer | Technology |
+|---|---|
+| Server | [Hono](https://hono.dev) |
+| Proof of human | [World AgentKit](https://docs.world.org/agents/agent-kit/integrate) |
+| Payment (agents) | [x402](https://github.com/coinbase/x402) (USDC on World Chain) |
+| Payment (humans) | [World MiniKit](https://docs.world.org/mini-apps) (WLD / USDC) |
+| Agent discovery | [x402 Bazaar](https://docs.cdp.coinbase.com/x402/bazaar) |
+| Phone numbers | [Twilio](https://www.twilio.com) (SMS + Voice) |
+| Voice AI | [Claude](https://anthropic.com) (Anthropic API) |
+| On-chain attestation | [EAS](https://docs.attest.org) on World Chain |
+
+---
+
+## API
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/provision` | x402 + AgentKit | Provision a number |
+| `GET` | `/number` | x402 + AgentKit | Get assigned number |
+| `GET` | `/messages` | x402 + AgentKit | Read SMS inbox |
+| `POST` | `/webhook/sms` | - | Twilio SMS webhook |
+| `POST` | `/webhook/voice` | - | Twilio voice webhook (AI conversation) |
+| `GET` | `/app` | - | Mini App (World App) |
+| `GET` | `/health` | - | Health check |
+
+---
+
+## Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `TWILIO_ACCOUNT_SID` | yes | Twilio account SID |
+| `TWILIO_AUTH_TOKEN` | yes | Twilio auth token |
+| `PAY_TO_ADDRESS` | yes | Wallet for payments |
+| `ANTHROPIC_API_KEY` | yes | Claude API key |
+| `BASE_URL` | yes | Public URL for webhooks |
+| `FACILITATOR_URL` | no | x402 facilitator |
+| `DEPLOYER_PRIVATE_KEY` | no | EAS attestation signing key |
+| `WORLD_APP_ID` | no | World Mini App ID |
+| `DEV_MODE` | no | Bypass auth for local testing |

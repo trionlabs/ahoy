@@ -152,7 +152,7 @@ const app = new Hono();
 if (!DEV_MODE) {
   app.use(paymentMiddlewareFromHTTPServer(httpServer));
 } else {
-  console.log("[dev] DEV_MODE=true — x402/AgentKit middleware bypassed");
+  console.log("[dev] DEV_MODE=true - x402/AgentKit middleware bypassed");
 }
 
 // --- Helper: extract humanId from agentkit header ---
@@ -205,7 +205,7 @@ app.post("/provision", async (c) => {
     // EAS attestation (on-chain proof, doesn't block response on failure)
     const attestationUID = await attestProvision(humanId);
 
-    console.log(`[provision] ${humanId} → ${phoneNumber}`);
+    console.log(`[provision] ${humanId} -> ${phoneNumber}`);
     return c.json({
       phoneNumber,
       provisioned: true,
@@ -246,7 +246,7 @@ app.post("/webhook/sms", async (c) => {
   const messageSid = (body["MessageSid"] as string) || "";
 
   const humanId = getHumanByNumber(to);
-  console.log(`[sms] ${from} → ${to} (human: ${humanId}): ${messageBody}`);
+  console.log(`[sms] ${from} -> ${to} (human: ${humanId}): ${messageBody}`);
 
   if (humanId) {
     addMessage(humanId, from, to, messageBody, messageSid);
@@ -361,7 +361,7 @@ app.post("/webhook/voice/status", async (c) => {
   const body = await c.req.parseBody();
   const callSid = body["CallSid"] as string;
   const status = body["CallStatus"] as string;
-  console.log(`[voice] call ${callSid} → ${status}`);
+  console.log(`[voice] call ${callSid} -> ${status}`);
   if (status === "completed" || status === "failed" || status === "no-answer") {
     cleanupCall(callSid);
   }
@@ -461,7 +461,7 @@ app.post("/app/pay/confirm", async (c) => {
     // EAS attestation
     await attestProvision(humanId);
 
-    console.log(`[miniapp] ${humanId} → ${phoneNumber}`);
+    console.log(`[miniapp] ${humanId} -> ${phoneNumber}`);
     return c.json({ phoneNumber, provisioned: true });
   } catch (e) {
     console.error(`[miniapp] provision failed for ${humanId}:`, e);

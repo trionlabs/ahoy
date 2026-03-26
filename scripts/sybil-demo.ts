@@ -9,7 +9,7 @@
  *   npx tsx scripts/sybil-demo.ts [agents] [humans] --dry-run  # simulated (no Twilio calls)
  *
  * Requires DEV_MODE=true on the server (uses X-Dev-Human-Id header).
- * In dry-run mode, no server needed — simulates the logic locally.
+ * In dry-run mode, no server needed - simulates the logic locally.
  */
 
 import "dotenv/config";
@@ -111,11 +111,11 @@ function red(s: string) {
 }
 
 async function main() {
-  console.log(bold("\nahoy — Sybil Resistance Demo"));
-  if (DRY_RUN) console.log(dim("(dry-run mode — no real numbers provisioned)"));
-  console.log(dim("━".repeat(50)));
+  console.log(bold("\nahoy - Sybil Resistance Demo"));
+  if (DRY_RUN) console.log(dim("(dry-run mode - no real numbers provisioned)"));
+  console.log(dim("=".repeat(50)));
   console.log(
-    `${NUM_AGENTS} agents, ${NUM_HUMANS} unique humans → how many numbers?\n`,
+    `${NUM_AGENTS} agents, ${NUM_HUMANS} unique humans -> how many numbers?\n`,
   );
 
   const agents = generateAgents(NUM_AGENTS, NUM_HUMANS);
@@ -137,7 +137,7 @@ async function main() {
     const humanShort = agent.humanId.slice(0, 12);
 
     process.stdout.write(
-      `  ${dim(agent.id)} ${dim("(" + agent.wallet.slice(0, 10) + ")")} → ${cyan(humanShort)} → ${yellow(number)} [${tag}]\n`,
+      `  ${dim(agent.id)} ${dim("(" + agent.wallet.slice(0, 10) + ")")} -> ${cyan(humanShort)} -> ${yellow(number)} [${tag}]\n`,
     );
   }
 
@@ -149,23 +149,23 @@ async function main() {
   const cached = successful.length - provisioned;
   const errors = results.filter((r) => r.error).length;
 
-  console.log(dim("\n━".repeat(50)));
+  console.log(dim("\n=".repeat(50)));
   console.log(bold("\nResults:"));
   console.log(`  ${bold(String(NUM_AGENTS))} agents`);
-  console.log(`  → ${bold(String(uniqueHumans.size))} unique humans`);
-  console.log(`  → ${bold(String(uniqueNumbers.size))} phone numbers`);
+  console.log(`  -> ${bold(String(uniqueHumans.size))} unique humans`);
+  console.log(`  -> ${bold(String(uniqueNumbers.size))} phone numbers`);
   console.log(
     `\n  ${green(String(provisioned))} provisioned, ${dim(String(cached) + " cached")}${errors ? `, ${red(String(errors) + " errors")}` : ""}`,
   );
 
-  console.log(dim("\n━".repeat(50)));
+  console.log(dim("\n=".repeat(50)));
   console.log(
     `  Without ahoy: ${red(String(NUM_AGENTS) + " numbers burned")}`,
   );
   console.log(
     `  With ahoy:    ${green(String(uniqueNumbers.size) + " numbers provisioned")}`,
   );
-  console.log(dim("━".repeat(50) + "\n"));
+  console.log(dim("=".repeat(50) + "\n"));
 
   // --- Per-human breakdown ---
   console.log(bold("Per-human breakdown:"));
@@ -175,7 +175,7 @@ async function main() {
     );
     const number = humanResults[0]?.phoneNumber;
     console.log(
-      `  ${cyan(humanId)} → ${yellow(number)} (${humanResults.length} agents)`,
+      `  ${cyan(humanId)} -> ${yellow(number)} (${humanResults.length} agents)`,
     );
   }
   console.log();

@@ -41,7 +41,7 @@ async function main() {
   } else {
     const baseUrl = process.env.BASE_URL!;
     if (!baseUrl) {
-      console.error("BASE_URL not set in .env — needed for voice webhooks.");
+      console.error("BASE_URL not set in .env - needed for voice webhooks.");
       process.exit(1);
     }
     console.log(`Calling ${to} from ${from} (AI voice conversation)...`);

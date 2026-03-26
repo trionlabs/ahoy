@@ -16,7 +16,7 @@ async function main() {
 
   console.log(`Found ${numbers.length} numbers:\n`);
   for (const n of numbers) {
-    console.log(`  ${n.phoneNumber} (${n.sid}) — created ${n.dateCreated}`);
+    console.log(`  ${n.phoneNumber} (${n.sid}) - created ${n.dateCreated}`);
   }
 
   console.log(`\nReleasing all ${numbers.length} numbers...\n`);
