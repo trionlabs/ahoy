@@ -1,0 +1,265 @@
+/**
+ * Mini App client, runs inside World App's WebView.
+ * Bundled by esbuild into public/app.js.
+ *
+ * When NOT in World App (dev/browser), falls back to dev mode:
+ * skips MiniKit commands, calls backend directly with mock auth.
+ */
+
+import {
+  MiniKit,
+  VerificationLevel,
+  Tokens,
+  tokenToDecimals,
+  type PayCommandInput,
+} from "@worldcoin/minikit-js";
+
+// --- State ---
+let humanId: string | null = null;
+let phoneNumber: string | null = null;
+let devMode = false;
+let inboxInterval: ReturnType<typeof setInterval> | null = null;
+
+// --- DOM helpers ---
+const $ = (id: string) => document.getElementById(id)!;
+
+function showScreen(id: string) {
+  document.querySelectorAll(".screen").forEach((s) => {
+    s.classList.remove("active");
+  });
+  // Small delay for transition
+  requestAnimationFrame(() => {
+    $(id).classList.add("active");
+  });
+}
+
+function setStatus(msg: string, type: "info" | "error" | "success" = "info") {
+  const el = $("status");
+  el.textContent = msg;
+  el.className = type;
+}
+
+function setPayStatus(msg: string) {
+  $("pay-status").textContent = msg;
+}
+
+function setBtnLoading(btnId: string, loading: boolean) {
+  const btn = $(btnId);
+  if (loading) {
+    btn.classList.add("btn-loading");
+    btn.setAttribute("disabled", "true");
+  } else {
+    btn.classList.remove("btn-loading");
+    btn.removeAttribute("disabled");
+  }
+}
+
+// --- Init ---
+document.addEventListener("DOMContentLoaded", () => {
+  const appId = (
+    document.querySelector("meta[name=app-id]") as HTMLMetaElement
+  )?.content;
+
+  if (appId) {
+    MiniKit.install(appId);
+  }
+
+  if (!MiniKit.isInstalled()) {
+    devMode = true;
+    $("dev-banner").classList.add("visible");
+  }
+
+  // Wire buttons
+  $("btn-verify").addEventListener("click", doVerify);
+  $("btn-pay-wld").addEventListener("click", () => doPay("wld"));
+  $("btn-pay-usdc").addEventListener("click", () => doPay("usdc"));
+  $("btn-refresh").addEventListener("click", () => {
+    setBtnLoading("btn-refresh", true);
+    loadInbox().then(() => setBtnLoading("btn-refresh", false));
+  });
+  $("phone-card").addEventListener("click", copyNumber);
+});
+
+// --- Copy number ---
+function copyNumber() {
+  if (!phoneNumber) return;
+  navigator.clipboard.writeText(phoneNumber).then(() => {
+    const toast = $("copied-toast");
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 1500);
+  });
+}
+
+// --- Verify ---
+async function doVerify() {
+  setStatus("Verifying your identity...", "info");
+  setBtnLoading("btn-verify", true);
+
+  try {
+    let payload: unknown;
+
+    if (devMode) {
+      payload = {
+        status: "success",
+        proof: "dev",
+        merkle_root: "dev",
+        nullifier_hash:
+          "dev-human-" + Math.random().toString(36).slice(2, 8),
+        verification_level: "orb",
+      };
+    } else {
+      const result = await MiniKit.commandsAsync.verify({
+        action: "provision-number",
+        verification_level: VerificationLevel.Orb,
+      });
+
+      if (result.finalPayload.status !== "success") {
+        setStatus("Verification failed. Try again.", "error");
+        setBtnLoading("btn-verify", false);
+        return;
+      }
+      payload = result.finalPayload;
+    }
+
+    const res = await fetch("/app/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payload, action: "provision-number" }),
+    });
+
+    const data = await res.json();
+    if (!data.humanId) {
+      setStatus(data.error || "Verification failed.", "error");
+      setBtnLoading("btn-verify", false);
+      return;
+    }
+
+    humanId = data.humanId;
+
+    if (data.phoneNumber) {
+      phoneNumber = data.phoneNumber;
+      $("phone-number").textContent = phoneNumber;
+      showScreen("screen-number");
+      startInboxPolling();
+    } else {
+      showScreen("screen-pay");
+    }
+  } catch (e) {
+    setStatus(`Something went wrong. Try again.`, "error");
+    setBtnLoading("btn-verify", false);
+  }
+}
+
+// --- Pay ---
+async function doPay(token: "wld" | "usdc") {
+  setPayStatus("Processing...");
+
+  try {
+    const initRes = await fetch("/app/pay/init", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ humanId }),
+    });
+    const { reference, payTo } = await initRes.json();
+
+    if (!devMode) {
+      const tokens =
+        token === "wld"
+          ? [
+              {
+                symbol: Tokens.WLD,
+                token_amount: tokenToDecimals(0.5, Tokens.WLD).toString(),
+              },
+            ]
+          : [
+              {
+                symbol: Tokens.USDC,
+                token_amount: tokenToDecimals(0.1, Tokens.USDC).toString(),
+              },
+            ];
+
+      const payload: PayCommandInput = {
+        reference,
+        to: payTo,
+        tokens,
+        description: "Ahoy — phone number provisioning",
+      };
+
+      const { finalPayload } = await MiniKit.commandsAsync.pay(payload);
+
+      if (finalPayload.status !== "success") {
+        setPayStatus("Payment cancelled.");
+        return;
+      }
+    }
+
+    setPayStatus("Provisioning your number...");
+
+    const confirmRes = await fetch("/app/pay/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        humanId,
+        payload: { status: "success" },
+        reference,
+      }),
+    });
+
+    const data = await confirmRes.json();
+    if (data.phoneNumber) {
+      phoneNumber = data.phoneNumber;
+      $("phone-number").textContent = phoneNumber;
+      showScreen("screen-number");
+      startInboxPolling();
+    } else {
+      setPayStatus(data.error || "Provisioning failed. Try again.");
+    }
+  } catch (e) {
+    setPayStatus("Something went wrong. Try again.");
+  }
+}
+
+// --- Inbox ---
+function startInboxPolling() {
+  loadInbox();
+  if (inboxInterval) clearInterval(inboxInterval);
+  inboxInterval = setInterval(loadInbox, 5000);
+}
+
+async function loadInbox() {
+  if (!humanId) return;
+
+  try {
+    const res = await fetch(
+      `/app/inbox?humanId=${encodeURIComponent(humanId)}`,
+    );
+    const data = await res.json();
+    const list = $("inbox-list");
+
+    if (!data.messages || data.messages.length === 0) {
+      list.innerHTML =
+        '<div class="empty">No messages yet.<br/>Text your number to see them here.</div>';
+      return;
+    }
+
+    list.innerHTML = data.messages
+      .reverse()
+      .map(
+        (m: { from: string; body: string; receivedAt: string }) =>
+          `<div class="msg">
+            <div class="msg-from">${escapeHtml(m.from)}</div>
+            <div class="msg-body">${escapeHtml(m.body)}</div>
+            <div class="msg-time">${new Date(m.receivedAt).toLocaleTimeString()}</div>
+          </div>`,
+      )
+      .join("");
+  } catch {
+    // silently fail
+  }
+}
+
+function escapeHtml(s: string): string {
+  const div = document.createElement("div");
+  div.textContent = s;
+  return div.innerHTML;
+}
