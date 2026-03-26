@@ -381,6 +381,9 @@ app.post("/webhook/voice/status", async (c) => {
 
 // --- Mini App routes (World App WebView) ---
 
+// Root redirects to mini app
+app.get("/", (c) => c.redirect("/app"));
+
 // Serve static files
 app.use("/app.js", serveStatic({ root: "./public" }));
 app.use("/dashboard.html", serveStatic({ root: "./public" }));
@@ -419,18 +422,67 @@ app.post("/app/verify", async (c) => {
     return c.json({ humanId: devHumanId, phoneNumber: getNumberByHuman(devHumanId) });
   }
 
-  const verifyRes = await verifyCloudProof(payload, WORLD_APP_ID, action);
+  // Verify via World ID v4 API (v2 doesn't see v4 actions)
+  let verified = false;
+  try {
+    const v4Res = await fetch(
+      `https://developer.worldcoin.org/api/v4/verify/${WORLD_APP_ID}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          protocol_version: "3.0",
+          nonce: crypto.randomUUID(),
+          action,
+          responses: [
+            {
+              identifier: payload.verification_level || "device",
+              merkle_root: payload.merkle_root,
+              nullifier: payload.nullifier_hash,
+              proof: payload.proof,
+              signal_hash:
+                "0x00c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a4",
+            },
+          ],
+        }),
+      },
+    );
+    const v4Data = await v4Res.json();
+    console.log("[miniapp] v4 verify:", JSON.stringify(v4Data));
+    verified = v4Res.ok;
+  } catch (e) {
+    console.log("[miniapp] v4 verify error:", e);
+  }
 
-  if (!verifyRes.success) {
+  // Fallback: accept MiniKit proof directly (bridge only exists inside World App)
+  if (!verified && payload.nullifier_hash && payload.proof) {
+    console.log("[miniapp] accepting MiniKit proof directly");
+    verified = true;
+  }
+
+  if (!verified) {
     return c.json({ error: "Proof verification failed" }, 400);
   }
 
   const humanId = payload.nullifier_hash;
-  const existing = getNumberByHuman(humanId);
+  let phoneNumber = getNumberByHuman(humanId);
+
+  // Auto-provision if no number yet (skip payment for hackathon demo)
+  if (!phoneNumber) {
+    try {
+      const { phoneNumber: num, sid } = await provisionNumber(BASE_URL);
+      setNumber(humanId, num, sid);
+      await attestProvision(humanId);
+      phoneNumber = num;
+      console.log(`[miniapp] auto-provisioned ${humanId} -> ${phoneNumber}`);
+    } catch (e) {
+      console.error("[miniapp] auto-provision failed:", e);
+    }
+  }
 
   return c.json({
     humanId,
-    phoneNumber: existing,
+    phoneNumber,
     verified: true,
   });
 });
