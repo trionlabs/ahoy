@@ -110,7 +110,7 @@ async function doVerify() {
     } else {
       const result = await MiniKit.commandsAsync.verify({
         action: "provision-number",
-        verification_level: VerificationLevel.Orb,
+        verification_level: VerificationLevel.Device,
       });
 
       if (result.finalPayload.status !== "success") {
