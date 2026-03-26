@@ -1,0 +1,29 @@
+{
+  "name": "ahoy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:client": "esbuild src/client.ts --bundle --outfile=public/app.js --format=esm --target=es2020 --minify",
+    "dev": "npm run build:client && tsx watch src/index.ts",
+    "start": "npm run build:client && tsx src/index.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
+    "@hono/node-server": "^1.0.0",
+    "@worldcoin/agentkit": "^0.1.0",
+    "@worldcoin/minikit-js": "^1.11.0",
+    "@x402/core": "^2.0.0",
+    "@x402/evm": "^2.0.0",
+    "@x402/hono": "^2.0.0",
+    "dotenv": "^17.3.1",
+    "hono": "^4.0.0",
+    "twilio": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.27.4",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}
