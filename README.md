@@ -1,5 +1,7 @@
 # ahoy
 
+Sybil-resistant phone numbers with AI-powered calls and SMS for agents. One World ID = one number, every agent shares it.
+
 > "Phone numbers present another interesting case. Agents will increasingly need phone numbers for two-factor authentication and signups. Without proof of unique human, thousands of agents could each acquire unique phone numbers, overwhelming telecommunications infrastructure. With AgentKit, a service can ensure that each unique human receives one phone number, shared across all of their agents."
 > - [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)
 
@@ -59,7 +61,7 @@ graph TB
     end
 
     subgraph "Mini App Flow"
-        USER[Human in World App] -->|Orb scan| WID[World ID Verify]
+        USER[Human in World App] -->|World ID verify| WID[World ID Verify]
         WID -->|nullifier_hash = humanId| PAY[Pay 0.5 WLD or $0.10 USDC]
         PAY --> PROV
     end
@@ -70,7 +72,7 @@ graph TB
 
 **Agent API**: AI agents pay via x402, prove humanity via AgentKit, get a number programmatically.
 
-**Mini App**: Humans open ahoy in World App, verify with Orb, pay in WLD or USDC, manage their number.
+**Mini App**: Humans open ahoy in World App, verify with World ID, pay in WLD or USDC, manage their number.
 
 Both flows enforce the same invariant. Both produce the same EAS attestation.
 
@@ -264,10 +266,13 @@ Open `http://localhost:4021/app` in a browser (dev mode) or in World App (produc
 | `POST` | `/provision` | x402 + AgentKit | Provision a number |
 | `GET` | `/number` | x402 + AgentKit | Get assigned number |
 | `GET` | `/messages` | x402 + AgentKit | Read SMS inbox |
+| `POST` | `/renew` | x402 + AgentKit | Extend billing 30 days |
+| `GET` | `/status` | x402 + AgentKit | Check number status and billing |
 | `POST` | `/webhook/sms` | - | Twilio SMS webhook |
 | `POST` | `/webhook/voice` | - | Twilio voice webhook (AI conversation) |
 | `GET` | `/app` | - | Mini App (World App) |
-| `GET` | `/health` | - | Health check |
+| `GET` | `/dashboard` | - | Sybil resistance dashboard |
+| `GET` | `/health` | - | Health check + XMTP address |
 
 ---
 
@@ -286,4 +291,5 @@ Open `http://localhost:4021/app` in a browser (dev mode) or in World App (produc
 | `XMTP_ENV` | no | XMTP network (dev/production) |
 | `XMTP_WALLET_KEY` | no | XMTP agent identity (EOA key) |
 | `XMTP_DB_ENCRYPTION_KEY` | no | XMTP local DB encryption |
+| `DB_ENCRYPTION_KEY` | no | AES-256-GCM key for phone number encryption |
 | `DEV_MODE` | no | Bypass auth for local testing |
