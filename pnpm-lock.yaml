@@ -35,6 +35,9 @@ importers:
       '@xmtp/agent-sdk':
         specifier: ^2.3.0
         version: 2.3.0(typescript@5.9.3)(zod@3.25.76)
+      '@xmtp/node-bindings':
+        specifier: ^1.10.0
+        version: 1.10.0
       better-sqlite3:
         specifier: ^12.8.0
         version: 12.8.0

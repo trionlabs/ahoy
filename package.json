@@ -27,6 +27,7 @@
     "@x402/extensions": "^2.8.0",
     "@x402/hono": "^2.0.0",
     "@xmtp/agent-sdk": "^2.3.0",
+    "@xmtp/node-bindings": "^1.10.0",
     "better-sqlite3": "^12.8.0",
     "dotenv": "^17.3.1",
     "hono": "^4.0.0",
