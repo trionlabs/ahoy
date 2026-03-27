@@ -1,9 +1,9 @@
-FROM node:22-slim
+FROM node:22
 
 WORKDIR /app
 
 COPY package.json ./
-RUN npm install --production=false
+RUN npm install
 
 COPY . .
 RUN npm run build:client
