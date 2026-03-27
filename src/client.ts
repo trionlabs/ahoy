@@ -73,7 +73,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Wire buttons
   $("btn-verify").addEventListener("click", doVerify);
 
-  // Collapsible agent config
+  // Collapsible sections
+  $("toggle-numbers").addEventListener("click", () => {
+    $("toggle-numbers").classList.toggle("open");
+    $("numbers-section").classList.toggle("open");
+  });
   $("toggle-agent").addEventListener("click", () => {
     $("toggle-agent").classList.toggle("open");
     $("agent-config").classList.toggle("open");

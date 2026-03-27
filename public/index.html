@@ -279,16 +279,29 @@
     <p id="pay-status" class="info"></p>
   </div>
 
-  <!-- Screen 3: Numbers + Agent Setup + Inbox -->
+  <!-- Screen 3: Inbox + Numbers + Agent Setup -->
   <div id="screen-number" class="screen">
-    <div style="display:flex;width:100%;justify-content:space-between;align-items:center">
-      <span class="label" style="width:auto">Your Numbers</span>
-      <span class="label" style="width:auto;color:#7c8aff" id="quota-text"></span>
-    </div>
-    <div id="numbers-list" style="width:100%;display:flex;flex-direction:column;gap:0.5rem"></div>
     <div id="copied-toast" class="copied-toast" style="position:fixed;bottom:2rem;left:50%;transform:translateX(-50%)">Copied!</div>
-    <button id="btn-provision-new" class="btn btn-outline" style="font-size:0.85rem;padding:0.7rem;display:none"><span class="btn-text">+ Provision New Number</span></button>
-    <p class="subtitle" style="font-size:0.82rem">Text or call any number. Your agents see everything via API or XMTP.</p>
+
+    <div class="inbox-header">
+      <span class="label" style="width:auto">Inbox</span>
+      <button id="btn-refresh" class="btn btn-outline btn-sm"><span class="btn-text">Refresh</span></button>
+    </div>
+    <div id="inbox-list" class="inbox">
+      <div class="empty">No messages yet.<br/>Text your number to see them here.</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-toggle" id="toggle-numbers">
+      <span class="label" style="width:auto">Your Numbers</span>
+      <span class="label" style="width:auto;color:#7c8aff;margin-left:auto;margin-right:0.5rem" id="quota-text"></span>
+      <span class="arrow">&rsaquo;</span>
+    </div>
+    <div class="section-content" id="numbers-section">
+      <div id="numbers-list" style="width:100%;display:flex;flex-direction:column;gap:0.5rem"></div>
+      <button id="btn-provision-new" class="btn btn-outline" style="font-size:0.85rem;padding:0.7rem;display:none"><span class="btn-text">+ Provision New Number</span></button>
+    </div>
 
     <div class="divider"></div>
 
@@ -310,16 +323,6 @@
         <span class="config-value" id="cfg-api-val"></span>
       </div>
       <button id="btn-copy-config" class="btn btn-outline" style="font-size:0.8rem;padding:0.6rem;margin-top:0.25rem"><span class="btn-text">Copy Agent Config</span></button>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="inbox-header">
-      <span class="label" style="width:auto">Inbox</span>
-      <button id="btn-refresh" class="btn btn-outline btn-sm"><span class="btn-text">Refresh</span></button>
-    </div>
-    <div id="inbox-list" class="inbox">
-      <div class="empty">No messages yet.<br/>Text your number to see them here.</div>
     </div>
 
   </div>
