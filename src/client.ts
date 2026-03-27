@@ -218,17 +218,37 @@ async function doVerify() {
         verification_level: "orb",
       };
     } else {
-      const result = await MiniKit.commandsAsync.verify({
-        action: "provision-number",
-        verification_level: VerificationLevel.Device,
-      });
+      // Auto-retry once if first attempt fails (MiniKit cold start)
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const result = await MiniKit.commandsAsync.verify({
+            action: "provision-number",
+            verification_level: VerificationLevel.Device,
+          });
 
-      if (result.finalPayload.status !== "success") {
-        setStatus("Verification failed. Try again.", "error");
-        setBtnLoading("btn-verify", false);
-        return;
+          if (result.finalPayload.status === "success") {
+            payload = result.finalPayload;
+            break;
+          }
+
+          if (attempt === 0) {
+            setStatus("Retrying...", "info");
+            await new Promise((r) => setTimeout(r, 500));
+            continue;
+          }
+
+          setStatus("Verification failed. Try again.", "error");
+          setBtnLoading("btn-verify", false);
+          return;
+        } catch (e) {
+          if (attempt === 1) {
+            setStatus("Verification failed. Try again.", "error");
+            setBtnLoading("btn-verify", false);
+            return;
+          }
+          await new Promise((r) => setTimeout(r, 500));
+        }
       }
-      payload = result.finalPayload;
     }
 
     const res = await fetch("/app/verify", {
