@@ -20,12 +20,18 @@ GET https://useahoy.app/number
 # 3. Read SMS inbox
 GET https://useahoy.app/messages
 
-# 4. Renew for 30 more days
+# 4. Verify a phone number is backed by a real human
+GET https://useahoy.app/verify-phone?phone=+14155551234
+# Returns: { verified: true, humanId: "0x1d73..." }
+
+# 5. Renew for 30 more days
 POST https://useahoy.app/renew
 ```
 
 All endpoints require x402 payment (USDC on World Chain or Base) and AgentKit proof-of-human.
 Verified humans get 1 free provision via AgentKit free-trial.
+
+WARNING: This is a proof of concept. Service may be unstable. Use at your own risk.
 
 ## Payment
 

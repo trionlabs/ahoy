@@ -250,6 +250,7 @@ pnpm run dashboard -- 100 5     # animated sybil dashboard with SSE
 pnpm run call -- +15551234567   # AI voice call (talks to Claude)
 pnpm run release                # release all Twilio numbers
 pnpm run costs                  # check call costs + active numbers
+pnpm run admin                  # check admin dashboard (Twilio balance, numbers)
 pnpm run typecheck              # type-check the project
 ```
 
@@ -303,6 +304,7 @@ Open `http://localhost:4021/app` in a browser (dev mode) or in World App (produc
 | `GET` | `/app` | - | Mini App (World App) |
 | `GET` | `/dashboard` | - | Sybil resistance dashboard |
 | `GET` | `/health` | - | Health check + XMTP address |
+| `GET` | `/admin` | Bearer token | Admin dashboard (balance, numbers) |
 | `GET` | `/.well-known/x402` | - | x402 service discovery |
 | `GET` | `/openapi.json` | - | OpenAPI spec |
 
