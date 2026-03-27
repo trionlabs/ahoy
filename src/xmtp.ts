@@ -18,20 +18,23 @@ import { getNumberByHuman, getMessages } from "./storage.js";
 
 let agent: Agent | null = null;
 
-// humanId -> XMTP wallet address
-const xmtpSubscribers = new Map<string, string>();
+// humanId -> Set of XMTP wallet addresses (all agents for this human)
+const xmtpSubscribers = new Map<string, Set<string>>();
 // reverse: XMTP address -> humanId
 const addressToHuman = new Map<string, string>();
 
 /**
  * Auto-register an agent's wallet for XMTP forwarding.
- * Called during provisioning when we know the agent's wallet address.
+ * Multiple agents per human are supported — all get forwarded SMS.
  */
 export function registerXmtpSubscriber(humanId: string, walletAddress: string): void {
   const addr = walletAddress.toLowerCase();
-  xmtpSubscribers.set(humanId, addr);
+  if (!xmtpSubscribers.has(humanId)) {
+    xmtpSubscribers.set(humanId, new Set());
+  }
+  xmtpSubscribers.get(humanId)!.add(addr);
   addressToHuman.set(addr, humanId);
-  console.log(`[xmtp] auto-registered ${humanId} -> ${addr}`);
+  console.log(`[xmtp] registered ${humanId} -> ${addr} (${xmtpSubscribers.get(humanId)!.size} agents)`);
 }
 
 export async function initXmtp(): Promise<void> {
@@ -60,8 +63,7 @@ export async function initXmtp(): Promise<void> {
         );
         return;
       }
-      xmtpSubscribers.set(humanId, senderAddress);
-      addressToHuman.set(senderAddress.toLowerCase(), humanId);
+      registerXmtpSubscriber(humanId, senderAddress);
       await ctx.conversation.sendText(
         `Registered! SMS to ${phone} will be forwarded here.\nUse /dm to send SMS.`,
       );
@@ -161,26 +163,29 @@ export async function forwardSmsToXmtp(
 ): Promise<void> {
   if (!agent) return;
 
-  const xmtpAddress = xmtpSubscribers.get(humanId);
-  if (!xmtpAddress) return;
+  const addresses = xmtpSubscribers.get(humanId);
+  if (!addresses || addresses.size === 0) return;
 
-  try {
-    const canMsg = await agent.client.canMessage([
-      {
-        identifier: xmtpAddress,
-        identifierKind: IdentifierKind.Ethereum,
-      },
-    ]);
+  // Forward to ALL registered agents for this human
+  for (const xmtpAddress of addresses) {
+    try {
+      const canMsg = await agent.client.canMessage([
+        {
+          identifier: xmtpAddress,
+          identifierKind: IdentifierKind.Ethereum,
+        },
+      ]);
 
-    if (!canMsg.get(xmtpAddress.toLowerCase())) {
-      console.log(`[xmtp] ${xmtpAddress} not reachable`);
-      return;
+      if (!canMsg.get(xmtpAddress.toLowerCase())) {
+        console.log(`[xmtp] ${xmtpAddress} not reachable`);
+        continue;
+      }
+
+      const dm = await agent.createDmWithAddress(xmtpAddress as `0x${string}`);
+      await dm.sendText(`SMS from ${from}:\n${body}`);
+      console.log(`[xmtp] forwarded SMS to ${xmtpAddress}`);
+    } catch (e) {
+      console.error(`[xmtp] forward to ${xmtpAddress} failed:`, e);
     }
-
-    const dm = await agent.createDmWithAddress(xmtpAddress as `0x${string}`);
-    await dm.sendText(`SMS from ${from}:\n${body}`);
-    console.log(`[xmtp] forwarded SMS to ${xmtpAddress}`);
-  } catch (e) {
-    console.error("[xmtp] forward failed:", e);
   }
 }
