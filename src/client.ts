@@ -113,10 +113,35 @@ function showNumberScreen() {
   $("cfg-xmtp-val").textContent = "0xc56d91...48e3d";
   $("cfg-api-val").textContent = window.location.origin + "/messages";
 
-  // Tap to copy
+  const xmtpAddr = "0xc56d916f4ac66f88fe8f08973cdba75946a48e3d";
+  const apiBase = window.location.origin;
+
+  // Tap to copy individual values
   $("cfg-humanid").addEventListener("click", () => copyToClipboard(humanId!));
-  $("cfg-xmtp").addEventListener("click", () => copyToClipboard("0xc56d916f4ac66f88fe8f08973cdba75946a48e3d"));
-  $("cfg-api").addEventListener("click", () => copyToClipboard(window.location.origin + "/messages"));
+  $("cfg-xmtp").addEventListener("click", () => copyToClipboard(xmtpAddr));
+  $("cfg-api").addEventListener("click", () => copyToClipboard(apiBase + "/messages"));
+
+  // Copy full agent config boilerplate
+  $("btn-copy-config").addEventListener("click", () => {
+    const config = [
+      "# ahoy - Agent Configuration",
+      "",
+      `PHONE_NUMBER=${phoneNumber}`,
+      `HUMAN_ID=${humanId}`,
+      "",
+      "# Option 1: Poll API for SMS",
+      `GET ${apiBase}/messages`,
+      `Header: X-Dev-Human-Id: ${humanId}`,
+      "",
+      "# Option 2: Receive SMS via XMTP",
+      `DM ${xmtpAddr} on XMTP with: register ${humanId}`,
+      "Then all incoming SMS will be forwarded to your XMTP inbox.",
+      "",
+      "# Send SMS via XMTP",
+      `DM ${xmtpAddr} with: send +1234567890 Your message here`,
+    ].join("\n");
+    copyToClipboard(config);
+  });
 
   showScreen("screen-number");
   startInboxPolling();
