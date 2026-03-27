@@ -214,9 +214,12 @@ async function doVerify() {
 
     humanId = data.humanId;
 
-    if (data.phoneNumber) {
-      phoneNumber = data.phoneNumber;
-      showNumberScreen();
+    // Handle multi-number response
+    const numbers = data.numbers || (data.phoneNumber ? [{ phoneNumber: data.phoneNumber, status: "active", paidUntil: 0 }] : []);
+    if (numbers.length > 0) {
+      phoneNumber = numbers[0].phoneNumber;
+      const paidUntil = numbers[0].paidUntil ? new Date(numbers[0].paidUntil * 1000).toISOString() : undefined;
+      showNumberScreen(paidUntil);
     } else {
       showScreen("screen-pay");
     }
@@ -345,14 +348,14 @@ async function doRelease() {
     const res = await fetch("/app/release", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ humanId }),
+      body: JSON.stringify({ humanId, phoneNumber }),
     });
     const data = await res.json();
     if (data.released) {
       phoneNumber = null;
       if (inboxInterval) clearInterval(inboxInterval);
       showScreen("screen-verify");
-      setStatus("Number released. Verify again to get a new one.", "info");
+      setStatus("Number released. Sign in to manage your numbers.", "info");
     }
   } catch {
     // ignore

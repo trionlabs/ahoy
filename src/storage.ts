@@ -3,15 +3,17 @@
  *
  * Phone numbers are encrypted at rest. If the DB file is stolen,
  * numbers can't be read without DB_ENCRYPTION_KEY.
- * HumanIds are stored as-is (they're already nullifier hashes, not PII).
  *
+ * Each verified human can have up to MAX_NUMBERS phone numbers.
  * Billing: each number has a status (active/suspended/released)
- * and a paid_until timestamp. Numbers are suspended after expiry,
- * released after a 7-day grace period.
+ * and a paid_until timestamp. Suspended after expiry, released
+ * after a 7-day grace period.
  */
 
 import Database from "better-sqlite3";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+
+export const MAX_NUMBERS = 5;
 
 // --- Encryption ---
 const ENC_KEY = process.env.DB_ENCRYPTION_KEY || "";
@@ -50,7 +52,8 @@ db.pragma("journal_mode = WAL");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS numbers (
-    human_id TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    human_id TEXT NOT NULL,
     phone_encrypted TEXT NOT NULL,
     phone_iv TEXT NOT NULL,
     sid TEXT NOT NULL,
@@ -72,7 +75,13 @@ db.exec(`
 
 // --- Prepared statements ---
 const stmtGetByHuman = db.prepare(
-  "SELECT phone_encrypted, phone_iv, status, paid_until FROM numbers WHERE human_id = ?",
+  "SELECT id, phone_encrypted, phone_iv, status, paid_until FROM numbers WHERE human_id = ? AND status != 'released'",
+);
+const stmtGetById = db.prepare(
+  "SELECT id, human_id, phone_encrypted, phone_iv, status, paid_until FROM numbers WHERE id = ?",
+);
+const stmtCountActive = db.prepare(
+  "SELECT COUNT(*) as count FROM numbers WHERE human_id = ? AND status != 'released'",
 );
 const stmtInsert = db.prepare(
   "INSERT INTO numbers (human_id, phone_encrypted, phone_iv, sid, status, provisioned_at, paid_until) VALUES (?, ?, ?, ?, 'active', ?, ?)",
@@ -81,13 +90,13 @@ const stmtAllActive = db.prepare(
   "SELECT human_id, phone_encrypted, phone_iv FROM numbers WHERE status != 'released'",
 );
 const stmtGetAll = db.prepare(
-  "SELECT human_id, phone_encrypted, phone_iv, status, paid_until FROM numbers WHERE status != 'released'",
+  "SELECT id, human_id, phone_encrypted, phone_iv, status, paid_until FROM numbers WHERE status != 'released'",
 );
 const stmtUpdateStatus = db.prepare(
-  "UPDATE numbers SET status = ? WHERE human_id = ?",
+  "UPDATE numbers SET status = ? WHERE id = ?",
 );
 const stmtExtendBilling = db.prepare(
-  "UPDATE numbers SET paid_until = ?, status = 'active' WHERE human_id = ?",
+  "UPDATE numbers SET paid_until = ?, status = 'active' WHERE id = ?",
 );
 const stmtInsertMsg = db.prepare(
   "INSERT INTO messages (human_id, from_number, to_number, body, sid) VALUES (?, ?, ?, ?, ?)",
@@ -117,40 +126,52 @@ function rebuildCache() {
 }
 rebuildCache();
 
+// --- Types ---
+export interface NumberRecord {
+  id: number;
+  phoneNumber: string;
+  status: string;
+  paidUntil: number;
+}
+
 // --- Number API ---
 
 const THIRTY_DAYS = 30 * 24 * 60 * 60;
 
-export function getNumberByHuman(humanId: string): string | null {
-  const row = stmtGetByHuman.get(humanId) as
-    | { phone_encrypted: string; phone_iv: string; status: string; paid_until: number }
-    | undefined;
-  if (!row || row.status === "released") return null;
-  try {
-    return decrypt(row.phone_encrypted, row.phone_iv);
-  } catch {
-    return null;
-  }
+export function getNumbersByHuman(humanId: string): NumberRecord[] {
+  const rows = stmtGetByHuman.all(humanId) as Array<{
+    id: number;
+    phone_encrypted: string;
+    phone_iv: string;
+    status: string;
+    paid_until: number;
+  }>;
+  return rows
+    .map((row) => {
+      try {
+        return {
+          id: row.id,
+          phoneNumber: decrypt(row.phone_encrypted, row.phone_iv),
+          status: row.status,
+          paidUntil: row.paid_until,
+        };
+      } catch {
+        return null;
+      }
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null);
 }
 
-export function getNumberStatus(humanId: string): {
-  phoneNumber: string | null;
-  status: string;
-  paidUntil: number;
-} | null {
-  const row = stmtGetByHuman.get(humanId) as
-    | { phone_encrypted: string; phone_iv: string; status: string; paid_until: number }
-    | undefined;
-  if (!row) return null;
-  try {
-    return {
-      phoneNumber: decrypt(row.phone_encrypted, row.phone_iv),
-      status: row.status,
-      paidUntil: row.paid_until,
-    };
-  } catch {
-    return null;
-  }
+/** Get first active number for a human (backward compat) */
+export function getNumberByHuman(humanId: string): string | null {
+  const numbers = getNumbersByHuman(humanId);
+  const active = numbers.find((n) => n.status === "active");
+  return active?.phoneNumber ?? numbers[0]?.phoneNumber ?? null;
+}
+
+export function getActiveCount(humanId: string): number {
+  const row = stmtCountActive.get(humanId) as { count: number };
+  return row.count;
 }
 
 export function setNumber(
@@ -158,6 +179,10 @@ export function setNumber(
   phoneNumber: string,
   sid: string,
 ): void {
+  const count = getActiveCount(humanId);
+  if (count >= MAX_NUMBERS) {
+    throw new Error(`Quota exceeded: ${count}/${MAX_NUMBERS} numbers`);
+  }
   const { encrypted, iv } = encrypt(phoneNumber);
   const now = Math.floor(Date.now() / 1000);
   stmtInsert.run(humanId, encrypted, iv, sid, now, now + THIRTY_DAYS);
@@ -169,12 +194,14 @@ export function getHumanByNumber(phoneNumber: string): string | null {
 }
 
 export function getAllMappings(): Array<{
+  id: number;
   humanId: string;
   phoneNumber: string;
   status: string;
   paidUntil: number;
 }> {
   const rows = stmtGetAll.all() as Array<{
+    id: number;
     human_id: string;
     phone_encrypted: string;
     phone_iv: string;
@@ -185,6 +212,7 @@ export function getAllMappings(): Array<{
     .map((row) => {
       try {
         return {
+          id: row.id,
           humanId: row.human_id,
           phoneNumber: decrypt(row.phone_encrypted, row.phone_iv),
           status: row.status,
@@ -199,19 +227,34 @@ export function getAllMappings(): Array<{
 
 // --- Billing ---
 
-export function suspendNumber(humanId: string): void {
-  stmtUpdateStatus.run("suspended", humanId);
+export function suspendNumberById(id: number): void {
+  stmtUpdateStatus.run("suspended", id);
 }
 
-export function releaseNumber(humanId: string): void {
-  const phone = getNumberByHuman(humanId);
-  if (phone) phoneToHuman.delete(phone);
-  stmtUpdateStatus.run("released", humanId);
+export function releaseNumberById(id: number): void {
+  const row = stmtGetById.get(id) as
+    | { phone_encrypted: string; phone_iv: string }
+    | undefined;
+  if (row) {
+    try {
+      const phone = decrypt(row.phone_encrypted, row.phone_iv);
+      phoneToHuman.delete(phone);
+    } catch { /* ignore */ }
+  }
+  stmtUpdateStatus.run("released", id);
 }
 
-export function extendBilling(humanId: string, daysFromNow = 30): void {
+export function releaseNumberByHuman(humanId: string, phoneNumber: string): void {
+  const numbers = getNumbersByHuman(humanId);
+  const match = numbers.find((n) => n.phoneNumber === phoneNumber);
+  if (match) {
+    releaseNumberById(match.id);
+  }
+}
+
+export function extendBillingById(id: number, daysFromNow = 30): void {
   const until = Math.floor(Date.now() / 1000) + daysFromNow * 24 * 60 * 60;
-  stmtExtendBilling.run(until, humanId);
+  stmtExtendBilling.run(until, id);
 }
 
 // --- SMS Inbox ---

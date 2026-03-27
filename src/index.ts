@@ -27,13 +27,16 @@ import {
   getNumberByHuman,
   setNumber,
   getHumanByNumber,
-  getNumberStatus,
+  getNumbersByHuman,
+  getActiveCount,
   getAllMappings,
   addMessage,
   getMessages,
-  suspendNumber,
-  releaseNumber,
-  extendBilling,
+  suspendNumberById,
+  releaseNumberById,
+  releaseNumberByHuman,
+  extendBillingById,
+  MAX_NUMBERS,
 } from "./storage.js";
 import { provisionNumber, twilio } from "./twilio.js";
 import { initEas, attestProvision, easEnabled } from "./eas.js";
@@ -232,6 +235,13 @@ async function resolveAgent(req: Request): Promise<{ humanId: string; wallet?: s
   }
 }
 
+// --- Helper: check if a specific phone is active ---
+function isPhoneActive(humanId: string, phoneNumber: string): boolean {
+  const nums = getNumbersByHuman(humanId);
+  const match = nums.find((n) => n.phoneNumber === phoneNumber);
+  return match?.status === "active";
+}
+
 // --- Concurrency guard for provisioning ---
 const provisioningLock = new Set<string>();
 
@@ -247,17 +257,15 @@ app.post("/provision", async (c) => {
   const { humanId, wallet } = agent;
   const notify = c.req.query("notify"); // "xmtp" or omit for API polling
 
-  // Core invariant: one human -> one number
-  const existingStatus = getNumberStatus(humanId);
-  if (existingStatus && existingStatus.status !== "released") {
+  // Quota check: up to MAX_NUMBERS per human
+  const count = getActiveCount(humanId);
+  if (count >= MAX_NUMBERS) {
     if (notify === "xmtp" && wallet) registerXmtpSubscriber(humanId, wallet);
     return c.json({
-      phoneNumber: existingStatus.phoneNumber,
-      provisioned: false,
-      status: existingStatus.status,
-      paidUntil: new Date(existingStatus.paidUntil * 1000).toISOString(),
+      error: `Quota reached: ${count}/${MAX_NUMBERS} numbers`,
+      numbers: getNumbersByHuman(humanId),
       notify: notify || "api",
-    });
+    }, 409);
   }
 
   // Prevent concurrent provisioning for the same human
@@ -323,10 +331,8 @@ app.post("/webhook/sms", async (c) => {
   const humanId = getHumanByNumber(to);
   console.log(`[sms] ${from} -> ${to} (human: ${humanId}): ${messageBody}`);
 
-  // Check billing status
   if (humanId) {
-    const status = getNumberStatus(humanId);
-    if (status && status.status !== "active") {
+    if (!isPhoneActive(humanId, to)) {
       const twiml = new twilio.twiml.MessagingResponse();
       twiml.message("This number is currently suspended.");
       return c.text(twiml.toString(), 200, { "Content-Type": "text/xml" });
@@ -416,8 +422,7 @@ app.post("/webhook/voice", async (c) => {
   if (to) {
     const humanId = getHumanByNumber(to);
     if (humanId) {
-      const status = getNumberStatus(humanId);
-      if (status && status.status !== "active") {
+      if (!isPhoneActive(humanId, to)) {
         const r = new twilio.twiml.VoiceResponse();
         r.say({ voice: "Polly.Joanna" as any }, "This number is currently suspended. Goodbye.");
         return c.text(r.toString(), 200, { "Content-Type": "text/xml" });
@@ -556,24 +561,27 @@ app.post("/app/verify", async (c) => {
   }
 
   const humanId = payload.nullifier_hash;
-  const existing = getNumberStatus(humanId);
+  const numbers = getNumbersByHuman(humanId);
 
-  // Re-activate suspended number
-  if (existing && existing.status === "suspended") {
-    extendBilling(humanId, 30);
-    console.log(`[miniapp] reactivated ${humanId} -> ${existing.phoneNumber}`);
+  // Re-activate any suspended numbers
+  const suspended = numbers.filter((n) => n.status === "suspended");
+  for (const s of suspended) {
+    extendBillingById(s.id, 30);
+    console.log(`[miniapp] reactivated ${humanId} -> ${s.phoneNumber}`);
+  }
+
+  // Return existing numbers if any
+  if (numbers.length > 0) {
     return c.json({
       humanId,
-      phoneNumber: existing.phoneNumber,
+      numbers: getNumbersByHuman(humanId), // refresh after reactivation
       verified: true,
-      reactivated: true,
     });
   }
 
-  let phoneNumber = existing?.phoneNumber ?? null;
-
-  // Auto-provision if no number yet
-  if (!phoneNumber) {
+  // Auto-provision first number
+  let phoneNumber: string | null = null;
+  {
     try {
       const { phoneNumber: num, sid } = await provisionNumber(BASE_URL);
       setNumber(humanId, num, sid);
@@ -587,7 +595,7 @@ app.post("/app/verify", async (c) => {
 
   return c.json({
     humanId,
-    phoneNumber,
+    numbers: getNumbersByHuman(humanId),
     verified: true,
   });
 });
@@ -637,17 +645,13 @@ app.post("/app/pay/confirm", async (c) => {
   }
 });
 
-// POST /app/release, release a number
+// POST /app/release, release a specific number
 app.post("/app/release", async (c) => {
-  const { humanId } = (await c.req.json()) as { humanId: string };
-  if (!humanId) return c.json({ error: "Missing humanId" }, 400);
-  const status = getNumberStatus(humanId);
-  if (!status || status.status === "released") {
-    return c.json({ error: "No active number" }, 404);
-  }
-  releaseNumber(humanId);
-  console.log(`[miniapp] released ${humanId} (was ${status.phoneNumber})`);
-  return c.json({ released: true });
+  const { humanId, phoneNumber: releasePhone } = (await c.req.json()) as { humanId: string; phoneNumber: string };
+  if (!humanId || !releasePhone) return c.json({ error: "Missing humanId or phoneNumber" }, 400);
+  releaseNumberByHuman(humanId, releasePhone);
+  console.log(`[miniapp] released ${humanId} -> ${releasePhone}`);
+  return c.json({ released: true, remaining: getNumbersByHuman(humanId) });
 });
 
 // GET /app/inbox, SMS inbox for a human
@@ -663,30 +667,29 @@ app.get("/app/inbox", (c) => {
 app.get("/status", async (c) => {
   const agent = await resolveAgent(c.req.raw);
   if (!agent) return c.json({ error: "Could not resolve human identity" }, 401);
-  const status = getNumberStatus(agent.humanId);
-  if (!status) return c.json({ error: "No number provisioned" }, 404);
+  const numbers = getNumbersByHuman(agent.humanId);
+  if (numbers.length === 0) return c.json({ error: "No numbers provisioned" }, 404);
   return c.json({
     humanId: agent.humanId,
-    phoneNumber: status.phoneNumber,
-    status: status.status,
-    paidUntil: new Date(status.paidUntil * 1000).toISOString(),
+    numbers,
+    quota: `${numbers.length}/${MAX_NUMBERS}`,
   });
 });
 
-// POST /renew, extend billing (x402 payment)
+// POST /renew, extend billing for all active numbers (x402 payment)
 app.post("/renew", async (c) => {
   const agent = await resolveAgent(c.req.raw);
   if (!agent) return c.json({ error: "Could not resolve human identity" }, 401);
-  const status = getNumberStatus(agent.humanId);
-  if (!status) return c.json({ error: "No number provisioned" }, 404);
-  if (status.status === "released") return c.json({ error: "Number released, provision a new one" }, 410);
-  extendBilling(agent.humanId, 30);
-  console.log(`[renew] ${agent.humanId} extended 30 days`);
+  const numbers = getNumbersByHuman(agent.humanId);
+  if (numbers.length === 0) return c.json({ error: "No numbers provisioned" }, 404);
+  for (const n of numbers) {
+    if (n.status !== "released") extendBillingById(n.id, 30);
+  }
+  console.log(`[renew] ${agent.humanId} extended 30 days (${numbers.length} numbers)`);
   return c.json({
     humanId: agent.humanId,
-    phoneNumber: status.phoneNumber,
-    status: "active",
-    paidUntil: new Date((Math.floor(Date.now() / 1000) + 30 * 86400) * 1000).toISOString(),
+    numbers: getNumbersByHuman(agent.humanId),
+    renewed: true,
   });
 });
 
@@ -703,15 +706,13 @@ function runBillingCycle() {
 
   for (const m of mappings) {
     if (m.status === "active" && m.paidUntil < now) {
-      suspendNumber(m.humanId);
+      suspendNumberById(m.id);
       suspended++;
-      console.log(`[billing] suspended ${m.humanId}`);
+      console.log(`[billing] suspended #${m.id} (${m.humanId})`);
     } else if (m.status === "suspended" && m.paidUntil + sevenDays < now) {
-      // Grace period expired, release from Twilio
-      releaseNumber(m.humanId);
+      releaseNumberById(m.id);
       released++;
-      console.log(`[billing] released ${m.humanId}`);
-      // TODO: release from Twilio via API (need sid stored)
+      console.log(`[billing] released #${m.id} (${m.humanId})`);
     }
   }
 
