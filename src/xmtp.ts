@@ -22,6 +22,17 @@ const xmtpSubscribers = new Map<string, string>();
 // reverse: XMTP address -> humanId
 const addressToHuman = new Map<string, string>();
 
+/**
+ * Auto-register an agent's wallet for XMTP forwarding.
+ * Called during provisioning when we know the agent's wallet address.
+ */
+export function registerXmtpSubscriber(humanId: string, walletAddress: string): void {
+  const addr = walletAddress.toLowerCase();
+  xmtpSubscribers.set(humanId, addr);
+  addressToHuman.set(addr, humanId);
+  console.log(`[xmtp] auto-registered ${humanId} -> ${addr}`);
+}
+
 export async function initXmtp(): Promise<void> {
   if (!process.env.XMTP_WALLET_KEY) {
     console.log("[xmtp] disabled (no XMTP_WALLET_KEY)");

@@ -36,10 +36,12 @@ import { initEas, attestProvision, easEnabled } from "./eas.js";
 // XMTP loaded dynamically - native bindings may not be available
 let initXmtp: () => Promise<void> = async () => {};
 let forwardSmsToXmtp: (humanId: string, from: string, body: string) => Promise<void> = async () => {};
+let registerXmtpSubscriber: (humanId: string, walletAddress: string) => void = () => {};
 try {
   const xmtp = await import("./xmtp.js");
   initXmtp = xmtp.initXmtp;
   forwardSmsToXmtp = xmtp.forwardSmsToXmtp;
+  registerXmtpSubscriber = xmtp.registerXmtpSubscriber;
 } catch (e) {
   console.log("[xmtp] native bindings not available, bridge disabled");
 }
@@ -49,10 +51,7 @@ import {
   getAIResponse,
   cleanupCall,
 } from "./voice.js";
-import {
-  verifyCloudProof,
-  type ISuccessResult,
-} from "@worldcoin/minikit-js";
+import { type ISuccessResult } from "@worldcoin/minikit-js";
 
 // --- Config ---
 const PORT = parseInt(process.env.PORT || "4021");
@@ -165,11 +164,11 @@ if (!DEV_MODE) {
   console.log("[dev] DEV_MODE=true - x402/AgentKit middleware bypassed");
 }
 
-// --- Helper: extract humanId from agentkit header ---
-async function resolveHumanId(req: Request): Promise<string | null> {
+// --- Helper: extract humanId + wallet address from agentkit header ---
+async function resolveAgent(req: Request): Promise<{ humanId: string; wallet?: string } | null> {
   if (DEV_MODE) {
     const devHumanId = req.headers.get("X-Dev-Human-Id");
-    if (devHumanId) return devHumanId;
+    if (devHumanId) return { humanId: devHumanId };
   }
 
   const header = req.headers.get(AGENTKIT);
@@ -178,7 +177,9 @@ async function resolveHumanId(req: Request): Promise<string | null> {
     const payload = parseAgentkitHeader(header);
     const sig = await verifyAgentkitSignature(payload);
     if (!sig.valid || !sig.address) return null;
-    return agentBook.lookupHuman(sig.address, payload.chainId);
+    const humanId = await agentBook.lookupHuman(sig.address, payload.chainId);
+    if (!humanId) return null;
+    return { humanId, wallet: sig.address };
   } catch {
     return null;
   }
@@ -190,16 +191,20 @@ const provisioningLock = new Set<string>();
 // --- Routes ---
 
 // POST /provision, agent requests a phone number
+// Query param ?notify=xmtp to receive SMS via XMTP instead of polling API
 app.post("/provision", async (c) => {
-  const humanId = await resolveHumanId(c.req.raw);
-  if (!humanId) {
+  const agent = await resolveAgent(c.req.raw);
+  if (!agent) {
     return c.json({ error: "Could not resolve human identity" }, 401);
   }
+  const { humanId, wallet } = agent;
+  const notify = c.req.query("notify"); // "xmtp" or omit for API polling
 
   // Core invariant: one human -> one number
   const existing = getNumberByHuman(humanId);
   if (existing) {
-    return c.json({ phoneNumber: existing, provisioned: false });
+    if (notify === "xmtp" && wallet) registerXmtpSubscriber(humanId, wallet);
+    return c.json({ phoneNumber: existing, provisioned: false, notify: notify || "api" });
   }
 
   // Prevent concurrent provisioning for the same human
@@ -212,13 +217,19 @@ app.post("/provision", async (c) => {
     const { phoneNumber, sid } = await provisionNumber(BASE_URL);
     setNumber(humanId, phoneNumber, sid);
 
-    // EAS attestation (on-chain proof, doesn't block response on failure)
+    // Auto-register for XMTP forwarding if agent has a wallet
+    if (notify === "xmtp" && wallet) {
+      registerXmtpSubscriber(humanId, wallet);
+    }
+
+    // EAS attestation
     const attestationUID = await attestProvision(humanId);
 
-    console.log(`[provision] ${humanId} -> ${phoneNumber}`);
+    console.log(`[provision] ${humanId} -> ${phoneNumber} (notify: ${notify || "api"})`);
     return c.json({
       phoneNumber,
       provisioned: true,
+      notify: notify || "api",
       ...(attestationUID ? { attestationUID } : {}),
     });
   } catch (e) {
@@ -231,10 +242,11 @@ app.post("/provision", async (c) => {
 
 // GET /number, agent queries its assigned number
 app.get("/number", async (c) => {
-  const humanId = await resolveHumanId(c.req.raw);
-  if (!humanId) {
+  const agent = await resolveAgent(c.req.raw);
+  if (!agent) {
     return c.json({ error: "Could not resolve human identity" }, 401);
   }
+  const { humanId } = agent;
 
   const phoneNumber = getNumberByHuman(humanId);
   if (!phoneNumber) {
@@ -273,10 +285,11 @@ app.post("/webhook/sms", async (c) => {
 
 // GET /messages, agent polls its SMS inbox
 app.get("/messages", async (c) => {
-  const humanId = await resolveHumanId(c.req.raw);
-  if (!humanId) {
+  const agent = await resolveAgent(c.req.raw);
+  if (!agent) {
     return c.json({ error: "Could not resolve human identity" }, 401);
   }
+  const { humanId } = agent;
 
   return c.json({ messages: getMessages(humanId) });
 });
