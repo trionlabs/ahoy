@@ -217,24 +217,16 @@ curl -X POST http://localhost:4021/provision -H "X-Dev-Human-Id: alice"
 # -> {"phoneNumber":"+13185551234","provisioned":false}
 ```
 
-### Sybil Demo
+### Scripts
 
 ```bash
-# Simulated (free, no Twilio calls)
-npx tsx scripts/sybil-demo.ts 100 5 --dry-run
-
-# Live (provisions real numbers)
-npx tsx scripts/sybil-demo.ts 50 3
-```
-
-### AI Voice Call
-
-```bash
-# Call someone, they talk to Claude
-npx tsx scripts/call.ts +15551234567
-
-# One-time TTS message
-npx tsx scripts/call.ts +15551234567 --tts "Hello from ahoy!"
+pnpm run sybil:dry              # sybil demo (simulated, free)
+pnpm run sybil -- 50 3          # sybil demo (live, provisions real numbers)
+pnpm run dashboard -- 100 5     # animated sybil dashboard with SSE
+pnpm run call -- +15551234567   # AI voice call (talks to Claude)
+pnpm run release                # release all Twilio numbers
+pnpm run costs                  # check call costs + active numbers
+pnpm run typecheck              # type-check the project
 ```
 
 ### Mini App
