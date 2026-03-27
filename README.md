@@ -147,6 +147,20 @@ Agents register their XMTP address to an ahoy number, then receive all SMS as XM
 
 ---
 
+## World ID v4 Compatibility
+
+The `verifyCloudProof` function from `@worldcoin/minikit-js` v1.x calls the legacy v2 API (`/api/v2/verify`), which cannot see actions created under World ID 4.0 (preview). This causes `"invalid_action"` errors even when the action exists in the developer portal.
+
+We fixed this by calling the v4 verification endpoint directly:
+
+```
+POST https://developer.worldcoin.org/api/v4/verify/{app_id}
+```
+
+The v4 body wraps proofs in a `responses[]` array with an `identifier` field (verification level) and uses `nullifier` instead of `nullifier_hash`. See `src/index.ts` for the implementation.
+
+---
+
 ## Quick Start
 
 ```bash
