@@ -544,10 +544,9 @@ const paymentRefs = new Map<string, { humanId: string; createdAt: number }>();
 
 // POST /app/verify, verify World ID proof, check if already provisioned
 app.post("/app/verify", async (c) => {
-  const { payload, action, provisionNew } = (await c.req.json()) as {
+  const { payload, action } = (await c.req.json()) as {
     payload: ISuccessResult;
     action: string;
-    provisionNew?: boolean;
   };
 
   if (!WORLD_APP_ID || DEV_MODE) {
@@ -608,8 +607,8 @@ app.post("/app/verify", async (c) => {
     console.log(`[miniapp] reactivated ${humanId} -> ${s.phoneNumber}`);
   }
 
-  // Return existing numbers (unless requesting a new one)
-  if (numbers.length > 0 && !provisionNew) {
+  // Return existing numbers if any
+  if (numbers.length > 0) {
     return c.json({
       humanId,
       numbers: getNumbersByHuman(humanId),
@@ -617,17 +616,7 @@ app.post("/app/verify", async (c) => {
     });
   }
 
-  // Check quota
-  if (getActiveCount(humanId) >= MAX_NUMBERS) {
-    return c.json({
-      humanId,
-      numbers: getNumbersByHuman(humanId),
-      verified: true,
-      error: `Quota reached: ${MAX_NUMBERS} numbers`,
-    });
-  }
-
-  // Provision number
+  // First time: auto-provision one number
   let phoneNumber: string | null = null;
   {
     try {
@@ -646,6 +635,28 @@ app.post("/app/verify", async (c) => {
     numbers: getNumbersByHuman(humanId),
     verified: true,
   });
+});
+
+// POST /app/provision, provision an additional number (humanId already verified)
+app.post("/app/provision", async (c) => {
+  const { humanId } = (await c.req.json()) as { humanId: string };
+  if (!humanId) return c.json({ error: "Missing humanId" }, 400);
+
+  const count = getActiveCount(humanId);
+  if (count >= MAX_NUMBERS) {
+    return c.json({ error: `Quota reached: ${count}/${MAX_NUMBERS}`, numbers: getNumbersByHuman(humanId) }, 409);
+  }
+
+  try {
+    const { phoneNumber, sid } = await provisionNumber(BASE_URL);
+    setNumber(humanId, phoneNumber, sid);
+    await attestProvision(humanId);
+    console.log(`[miniapp] provisioned ${humanId} -> ${phoneNumber} (${count + 1}/${MAX_NUMBERS})`);
+    return c.json({ numbers: getNumbersByHuman(humanId) });
+  } catch (e) {
+    console.error(`[miniapp] provision failed:`, e);
+    return c.json({ error: "Failed to provision number." }, 500);
+  }
 });
 
 // POST /app/pay/init, create a payment reference

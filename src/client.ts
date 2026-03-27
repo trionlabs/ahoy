@@ -396,17 +396,15 @@ async function doProvisionNew() {
   if (!humanId) return;
   setBtnLoading("btn-provision-new", true);
   try {
-    const res = await fetch("/app/verify", {
+    const res = await fetch("/app/provision", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        payload: { nullifier_hash: humanId, proof: "existing", merkle_root: "existing", verification_level: "device" },
-        action: "provision-number",
-        provisionNew: true,
-      }),
+      body: JSON.stringify({ humanId }),
     });
     const data = await res.json();
-    if (data.numbers) {
+    if (data.error) {
+      alert(data.error);
+    } else if (data.numbers) {
       allNumbers = data.numbers;
       phoneNumber = allNumbers[0]?.phoneNumber ?? null;
       showNumberScreen();
