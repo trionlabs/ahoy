@@ -81,7 +81,6 @@ document.addEventListener("DOMContentLoaded", () => {
   $("btn-pay-wld").addEventListener("click", () => doPay("wld"));
   $("btn-pay-usdc").addEventListener("click", () => doPay("usdc"));
   $("btn-provision-new").addEventListener("click", doProvisionNew);
-  $("btn-release").addEventListener("click", doRelease);
   $("btn-refresh").addEventListener("click", () => {
     setBtnLoading("btn-refresh", true);
     loadInbox().then(() => setBtnLoading("btn-refresh", false));
@@ -119,19 +118,41 @@ async function showNumberScreen() {
       const badge = n.status === "active"
         ? `<span class="phone-badge">Active</span>`
         : `<span class="phone-badge" style="background:#2a1a1a;color:#ff6b6b">${n.status}</span>`;
-      return `<div class="phone-card reveal" data-phone="${n.phoneNumber}">
-        <div class="phone-number">${formatPhone(n.phoneNumber)}</div>
-        <div class="phone-meta">${badge}${expiry ? `<span class="phone-badge expires">Until ${expiry}</span>` : ""}</div>
-        <div class="phone-hint">tap to copy</div>
+      return `<div class="number-item reveal" data-phone="${escapeHtml(n.phoneNumber)}">
+        <div class="phone-card" style="cursor:pointer">
+          <div class="phone-number">${formatPhone(n.phoneNumber)}</div>
+          <div class="phone-meta">${badge}${expiry ? `<span class="phone-badge expires">Until ${expiry}</span>` : ""}</div>
+          <div class="phone-hint">tap number to copy</div>
+        </div>
+        <button class="btn-release-inline">Release</button>
+        <div class="release-confirm" style="display:none">
+          <span style="font-size:0.78rem;color:#ff6b6b">Are you sure?</span>
+          <button class="btn-confirm-yes">Yes, release</button>
+          <button class="btn-confirm-no">Cancel</button>
+        </div>
       </div>`;
     })
     .join("");
 
-  // Tap to copy on each card
-  list.querySelectorAll(".phone-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      copyToClipboard((card as HTMLElement).dataset.phone || "");
+  // Wire each card
+  list.querySelectorAll(".number-item").forEach((item) => {
+    const phone = (item as HTMLElement).dataset.phone || "";
+    const card = item.querySelector(".phone-card") as HTMLElement;
+    const btnRelease = item.querySelector(".btn-release-inline") as HTMLElement;
+    const confirmDiv = item.querySelector(".release-confirm") as HTMLElement;
+    const btnYes = item.querySelector(".btn-confirm-yes") as HTMLElement;
+    const btnNo = item.querySelector(".btn-confirm-no") as HTMLElement;
+
+    card.addEventListener("click", () => copyToClipboard(phone));
+    btnRelease.addEventListener("click", () => {
+      btnRelease.style.display = "none";
+      confirmDiv.style.display = "flex";
     });
+    btnNo.addEventListener("click", () => {
+      confirmDiv.style.display = "none";
+      btnRelease.style.display = "block";
+    });
+    btnYes.addEventListener("click", () => releasePhone(phone));
   });
 
   // Quota
@@ -370,21 +391,13 @@ async function doProvisionNew() {
   setBtnLoading("btn-provision-new", false);
 }
 
-// --- Release ---
-async function doRelease() {
-  const target = allNumbers.length === 1
-    ? allNumbers[0]
-    : (() => {
-        const idx = prompt(`Which number to release? (1-${allNumbers.length})\n${allNumbers.map((n, i) => `${i + 1}. ${formatPhone(n.phoneNumber)}`).join("\n")}`);
-        return idx ? allNumbers[parseInt(idx) - 1] : null;
-      })();
-  if (!target) return;
-  if (!confirm(`Release ${formatPhone(target.phoneNumber)}? You'll lose it permanently.`)) return;
+// --- Release a specific number ---
+async function releasePhone(phone: string) {
   try {
     const res = await fetch("/app/release", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ humanId, phoneNumber: target.phoneNumber }),
+      body: JSON.stringify({ humanId, phoneNumber: phone }),
     });
     const data = await res.json();
     if (data.released) {
@@ -403,3 +416,6 @@ async function doRelease() {
     // ignore
   }
 }
+
+// Legacy compat
+function doRelease() { if (phoneNumber) releasePhone(phoneNumber); }
