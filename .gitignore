@@ -5,3 +5,4 @@ dist/
 public/app.js
 .claude/
 xmtp-*.db3*
+ahoy.db*
