@@ -79,6 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   $("btn-pay-wld").addEventListener("click", () => doPay("wld"));
   $("btn-pay-usdc").addEventListener("click", () => doPay("usdc"));
+  $("btn-release").addEventListener("click", doRelease);
   $("btn-refresh").addEventListener("click", () => {
     setBtnLoading("btn-refresh", true);
     loadInbox().then(() => setBtnLoading("btn-refresh", false));
@@ -335,4 +336,25 @@ function escapeHtml(s: string): string {
   const div = document.createElement("div");
   div.textContent = s;
   return div.innerHTML;
+}
+
+// --- Release ---
+async function doRelease() {
+  if (!confirm("Release this number? You'll lose it permanently.")) return;
+  try {
+    const res = await fetch("/app/release", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ humanId }),
+    });
+    const data = await res.json();
+    if (data.released) {
+      phoneNumber = null;
+      if (inboxInterval) clearInterval(inboxInterval);
+      showScreen("screen-verify");
+      setStatus("Number released. Verify again to get a new one.", "info");
+    }
+  } catch {
+    // ignore
+  }
 }

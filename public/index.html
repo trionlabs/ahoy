@@ -171,6 +171,13 @@
 
     .divider { width: 100%; height: 1px; background: #141418; margin: 0.15rem 0; }
 
+    /* Danger */
+    .btn-danger {
+      background: transparent; color: #ff6b6b; border: 1px solid #2a1a1a;
+      font-size: 0.82rem; padding: 0.7rem;
+    }
+    .btn-danger:active { background: #1a0a0a; }
+
     /* Number reveal animation */
     @keyframes revealUp {
       from { opacity: 0; transform: translateY(12px); }
@@ -197,7 +204,7 @@
       <div class="pill"><b>XMTP</b>Bridge to web3</div>
     </div>
     <div class="spacer"></div>
-    <button id="btn-verify" class="btn btn-primary"><span class="btn-text">Verify with World ID</span></button>
+    <button id="btn-verify" class="btn btn-primary"><span class="btn-text">Sign in with World ID</span></button>
     <p id="status" class="info"></p>
   </div>
 
@@ -273,6 +280,9 @@
     <div id="inbox-list" class="inbox">
       <div class="empty">No messages yet.<br/>Text your number to see them here.</div>
     </div>
+
+    <div class="divider"></div>
+    <button id="btn-release" class="btn btn-danger"><span class="btn-text">Release Number</span></button>
   </div>
 
   <script type="module" src="/app.js"></script>

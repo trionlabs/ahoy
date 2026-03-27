@@ -637,6 +637,19 @@ app.post("/app/pay/confirm", async (c) => {
   }
 });
 
+// POST /app/release, release a number
+app.post("/app/release", async (c) => {
+  const { humanId } = (await c.req.json()) as { humanId: string };
+  if (!humanId) return c.json({ error: "Missing humanId" }, 400);
+  const status = getNumberStatus(humanId);
+  if (!status || status.status === "released") {
+    return c.json({ error: "No active number" }, 404);
+  }
+  releaseNumber(humanId);
+  console.log(`[miniapp] released ${humanId} (was ${status.phoneNumber})`);
+  return c.json({ released: true });
+});
+
 // GET /app/inbox, SMS inbox for a human
 app.get("/app/inbox", (c) => {
   const humanId = c.req.query("humanId");
