@@ -71,6 +71,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Wire buttons
   $("btn-verify").addEventListener("click", doVerify);
+
+  // Collapsible agent config
+  $("toggle-agent").addEventListener("click", () => {
+    $("toggle-agent").classList.toggle("open");
+    $("agent-config").classList.toggle("open");
+  });
   $("btn-pay-wld").addEventListener("click", () => doPay("wld"));
   $("btn-pay-usdc").addEventListener("click", () => doPay("usdc"));
   $("btn-refresh").addEventListener("click", () => {
@@ -101,8 +107,16 @@ function formatPhone(num: string): string {
 }
 
 // --- Show number screen with agent config ---
-async function showNumberScreen() {
+async function showNumberScreen(paidUntil?: string) {
   $("phone-number").textContent = formatPhone(phoneNumber!);
+
+  // Billing badge
+  if (paidUntil) {
+    const d = new Date(paidUntil);
+    $("phone-expires").textContent = `Until ${d.toLocaleDateString()}`;
+  } else {
+    $("phone-expires").textContent = "30 days";
+  }
 
   // Agent config
   const truncId = humanId!.length > 20

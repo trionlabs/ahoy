@@ -21,277 +21,180 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Dev banner */
     .dev-banner {
-      display: none;
-      width: 100%;
-      padding: 6px;
-      background: #332b00;
-      color: #ffd60a;
-      font-size: 0.75rem;
-      text-align: center;
-      font-weight: 500;
-      letter-spacing: 0.03em;
+      display: none; width: 100%; padding: 6px;
+      background: #332b00; color: #ffd60a;
+      font-size: 0.72rem; text-align: center; font-weight: 500; letter-spacing: 0.03em;
     }
     .dev-banner.visible { display: block; }
 
-    /* Screens */
     .screen {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      padding: 3rem 1.5rem 2rem;
-      width: 100%;
-      max-width: 400px;
-      min-height: 100dvh;
-      gap: 1rem;
-      opacity: 0;
-      transition: opacity 0.3s ease;
+      display: none; flex-direction: column; align-items: center;
+      padding: 2.5rem 1.5rem 2rem;
+      width: 100%; max-width: 420px; min-height: 100dvh;
+      gap: 1.25rem; opacity: 0; transition: opacity 0.35s ease;
     }
-    .screen.active {
-      display: flex;
-      opacity: 1;
-    }
+    .screen.active { display: flex; opacity: 1; }
 
-    /* Logo */
-    .logo {
-      font-size: 3rem;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      background: linear-gradient(135deg, #fff 0%, #a0a0a0 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .logo-icon { font-size: 3.5rem; margin-bottom: -0.25rem; }
-
-    /* Typography */
-    .subtitle {
-      color: #777;
-      font-size: 0.95rem;
-      text-align: center;
-      line-height: 1.6;
-    }
-    .label {
-      font-size: 0.75rem;
-      color: #555;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      font-weight: 600;
-    }
-
-    /* Buttons */
     .spacer { flex: 1; }
 
+    /* Logo */
+    .logo-mark {
+      width: 72px; height: 72px; border-radius: 22px;
+      background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+      border: 1px solid #222;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+    }
+    .logo {
+      font-size: 2.8rem; font-weight: 800; letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #fff 0%, #999 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .subtitle { color: #666; font-size: 0.9rem; text-align: center; line-height: 1.6; }
+    .label {
+      font-size: 0.7rem; color: #444; text-transform: uppercase;
+      letter-spacing: 0.1em; font-weight: 600; width: 100%;
+    }
+
+    /* Feature pills */
+    .pills { display: flex; gap: 0.5rem; width: 100%; }
+    .pill {
+      flex: 1; padding: 0.65rem 0.5rem;
+      background: #0f0f14; border-radius: 12px; border: 1px solid #1a1a22;
+      text-align: center; font-size: 0.72rem; color: #888;
+    }
+    .pill b { display: block; font-size: 0.95rem; margin-bottom: 2px; color: #ccc; font-weight: 500; }
+
+    /* Buttons */
     .btn {
-      width: 100%;
-      padding: 1rem;
-      border: none;
-      border-radius: 14px;
-      font-size: 1.05rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      position: relative;
-      overflow: hidden;
+      width: 100%; padding: 0.95rem; border: none; border-radius: 14px;
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+      transition: all 0.15s; position: relative; overflow: hidden;
     }
     .btn:active { transform: scale(0.98); }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
     .btn-primary { background: #fff; color: #0a0a0a; }
-    .btn-primary:hover:not(:disabled) { background: #e8e8e8; }
-
-    .btn-outline {
-      background: transparent;
-      color: #fff;
-      border: 1px solid #333;
-    }
-    .btn-outline:hover:not(:disabled) { border-color: #555; background: #111; }
-
-    .btn-sm {
-      width: auto;
-      padding: 0.45rem 1rem;
-      font-size: 0.8rem;
-      border-radius: 8px;
-    }
-
+    .btn-outline { background: transparent; color: #aaa; border: 1px solid #222; }
+    .btn-sm { width: auto; padding: 0.4rem 0.9rem; font-size: 0.78rem; border-radius: 8px; }
     .btn-loading .btn-text { visibility: hidden; }
     .btn-loading::after {
-      content: '';
-      position: absolute;
-      top: 50%; left: 50%;
-      width: 20px; height: 20px;
-      margin: -10px 0 0 -10px;
-      border: 2px solid transparent;
-      border-top-color: currentColor;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
+      content: ''; position: absolute; top: 50%; left: 50%;
+      width: 18px; height: 18px; margin: -9px 0 0 -9px;
+      border: 2px solid transparent; border-top-color: currentColor;
+      border-radius: 50%; animation: spin 0.6s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Phone number card */
+    /* Phone card */
     .phone-card {
-      width: 100%;
-      padding: 1.75rem 1.5rem;
-      background: linear-gradient(145deg, #141414, #0e0e0e);
-      border-radius: 20px;
-      border: 1px solid #1e1e1e;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
+      width: 100%; padding: 2rem 1.5rem;
+      background: linear-gradient(160deg, #12121a, #0a0a10);
+      border-radius: 20px; border: 1px solid #1e1e2a;
+      text-align: center; cursor: pointer; transition: all 0.2s; position: relative;
     }
     .phone-card:active { transform: scale(0.98); border-color: #333; }
-    .phone-number {
-      font-size: 1.85rem;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: 0.02em;
+    .phone-number { font-size: 1.9rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
+    .phone-meta { display: flex; justify-content: center; gap: 1rem; margin-top: 0.75rem; }
+    .phone-badge {
+      font-size: 0.65rem; padding: 3px 8px; border-radius: 6px;
+      background: #1a2a1a; color: #51cf66; font-weight: 500;
     }
-    .phone-hint { font-size: 0.75rem; color: #444; margin-top: 0.5rem; }
+    .phone-badge.expires { background: #1a1a2a; color: #7c8aff; }
+    .phone-hint { font-size: 0.68rem; color: #333; margin-top: 0.6rem; }
     .copied-toast {
-      position: absolute;
-      top: -2rem;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #2a2a2a;
-      color: #fff;
-      padding: 0.3rem 0.8rem;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      opacity: 0;
-      transition: opacity 0.2s;
-      pointer-events: none;
+      position: absolute; bottom: -1.8rem; left: 50%; transform: translateX(-50%);
+      background: #222; color: #fff; padding: 0.25rem 0.7rem;
+      border-radius: 6px; font-size: 0.72rem;
+      opacity: 0; transition: opacity 0.2s; pointer-events: none;
     }
     .copied-toast.show { opacity: 1; }
 
-    /* Features row */
-    .features { display: flex; gap: 0.5rem; width: 100%; }
-    .feature {
-      flex: 1;
-      padding: 0.75rem;
-      background: #111;
-      border-radius: 12px;
-      border: 1px solid #1a1a1a;
-      text-align: center;
+    /* Collapsible agent config */
+    .section-toggle {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; padding: 0.5rem 0;
     }
-    .feature-icon { font-size: 1.25rem; }
-    .feature-label { font-size: 0.7rem; color: #666; margin-top: 0.25rem; }
+    .section-toggle .arrow { color: #333; font-size: 0.8rem; transition: transform 0.2s; }
+    .section-toggle.open .arrow { transform: rotate(90deg); }
+    .section-content { width: 100%; display: none; flex-direction: column; gap: 0.4rem; }
+    .section-content.open { display: flex; }
+
+    .config-row {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #0f0f14; border-radius: 10px; padding: 0.65rem 0.85rem;
+      border: 1px solid #161620; cursor: pointer; transition: border-color 0.15s;
+    }
+    .config-row:active { border-color: #333; }
+    .config-label { font-size: 0.68rem; color: #555; font-weight: 600; }
+    .config-value {
+      font-size: 0.72rem; color: #7c8aff; font-family: 'SF Mono', monospace;
+      max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
 
     /* Pay options */
     .pay-options { width: 100%; display: flex; flex-direction: column; gap: 0.75rem; }
     .pay-option {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1rem 1.25rem;
-      background: #111;
-      border-radius: 14px;
-      border: 1px solid #222;
-      cursor: pointer;
-      transition: all 0.15s;
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1rem 1.25rem; background: #0f0f14; border-radius: 14px;
+      border: 1px solid #1a1a22; cursor: pointer; transition: all 0.15s;
     }
-    .pay-option:active { transform: scale(0.98); border-color: #444; }
-    .pay-token { font-size: 1.5rem; }
+    .pay-option:active { transform: scale(0.98); border-color: #333; }
+    .pay-token { font-size: 1.4rem; }
     .pay-details { flex: 1; }
-    .pay-amount { font-weight: 600; font-size: 1rem; }
-    .pay-desc { font-size: 0.8rem; color: #666; }
-    .pay-arrow { color: #444; font-size: 1.2rem; }
+    .pay-amount { font-weight: 600; font-size: 0.95rem; }
+    .pay-desc { font-size: 0.78rem; color: #555; }
+    .pay-arrow { color: #333; }
 
     /* Inbox */
-    .inbox-header {
-      display: flex;
-      width: 100%;
-      justify-content: space-between;
-      align-items: center;
-    }
+    .inbox-header { display: flex; width: 100%; justify-content: space-between; align-items: center; }
     .inbox {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      flex: 1;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
+      width: 100%; display: flex; flex-direction: column; gap: 0.4rem;
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
     }
     .msg {
-      background: #111;
-      border-radius: 14px;
-      padding: 0.85rem 1rem;
-      border: 1px solid #1a1a1a;
+      background: #0f0f14; border-radius: 12px; padding: 0.75rem 0.9rem;
+      border: 1px solid #161620;
     }
-    .msg-from { font-size: 0.75rem; color: #7c8aff; font-weight: 500; }
-    .msg-body { margin-top: 0.3rem; font-size: 0.95rem; line-height: 1.4; }
-    .msg-time { margin-top: 0.3rem; font-size: 0.7rem; color: #444; }
-    .empty {
-      color: #444;
-      text-align: center;
-      padding: 3rem 1rem;
-      font-size: 0.9rem;
-      line-height: 1.5;
-    }
-
-    /* Agent config */
-    .agent-config {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-    }
-    .config-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #111;
-      border-radius: 10px;
-      padding: 0.7rem 0.9rem;
-      border: 1px solid #1a1a1a;
-      cursor: pointer;
-      transition: border-color 0.15s;
-    }
-    .config-row:active { border-color: #444; }
-    .config-label { font-size: 0.7rem; color: #555; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-    .config-value { font-size: 0.75rem; color: #7c8aff; font-family: 'SF Mono', monospace; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .msg-from { font-size: 0.72rem; color: #7c8aff; font-weight: 500; }
+    .msg-body { margin-top: 0.25rem; font-size: 0.9rem; line-height: 1.4; }
+    .msg-time { margin-top: 0.2rem; font-size: 0.65rem; color: #333; }
+    .empty { color: #333; text-align: center; padding: 2.5rem 1rem; font-size: 0.85rem; line-height: 1.6; }
 
     /* Status */
-    #status {
-      font-size: 0.85rem;
-      min-height: 1.2em;
-      text-align: center;
-      transition: color 0.2s;
+    #status, #pay-status {
+      font-size: 0.8rem; min-height: 1.2em; text-align: center; transition: color 0.2s;
     }
-    #status.error { color: #ff6b6b; }
-    #status.info { color: #777; }
-    #status.success { color: #51cf66; }
+    .error { color: #ff6b6b; }
+    .info { color: #555; }
+    .success { color: #51cf66; }
 
-    .divider { width: 100%; height: 1px; background: #1a1a1a; margin: 0.25rem 0; }
+    .divider { width: 100%; height: 1px; background: #141418; margin: 0.15rem 0; }
+
+    /* Number reveal animation */
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .reveal { animation: revealUp 0.4s ease forwards; }
   </style>
 </head>
 <body>
 
-  <div id="dev-banner" class="dev-banner">DEV MODE - not in World App</div>
+  <div id="dev-banner" class="dev-banner">DEV MODE</div>
 
   <!-- Screen 1: Verify -->
   <div id="screen-verify" class="screen active">
-    <div class="logo-icon">&#9742;</div>
+    <div class="spacer"></div>
+    <div class="logo-mark">&#9742;&#65039;</div>
     <div class="logo">ahoy</div>
     <p class="subtitle">
-      One phone number per human.<br/>
-      All your agents share it.
+      One phone number per human.<br/>All your agents share it.
     </p>
-    <div class="features">
-      <div class="feature">
-        <div class="feature-icon">&#128172;</div>
-        <div class="feature-label">SMS</div>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">&#128222;</div>
-        <div class="feature-label">Voice AI</div>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">&#128274;</div>
-        <div class="feature-label">Sybil-proof</div>
-      </div>
+    <div class="pills">
+      <div class="pill"><b>SMS</b>Receive texts</div>
+      <div class="pill"><b>Voice</b>AI answers calls</div>
+      <div class="pill"><b>XMTP</b>Bridge to web3</div>
     </div>
     <div class="spacer"></div>
     <button id="btn-verify" class="btn btn-primary"><span class="btn-text">Verify with World ID</span></button>
@@ -300,9 +203,9 @@
 
   <!-- Screen 2: Pay -->
   <div id="screen-pay" class="screen">
-    <div class="logo" style="font-size:2rem">ahoy</div>
-    <p class="subtitle">Verified. Choose how to pay for your number.</p>
     <div class="spacer"></div>
+    <div class="logo" style="font-size:2rem">ahoy</div>
+    <p class="subtitle">Verified. Choose how to pay.</p>
     <div class="pay-options">
       <div id="btn-pay-wld" class="pay-option">
         <div class="pay-token">&#127760;</div>
@@ -310,7 +213,7 @@
           <div class="pay-amount">0.5 WLD</div>
           <div class="pay-desc">World token</div>
         </div>
-        <div class="pay-arrow">&rarr;</div>
+        <div class="pay-arrow">&rsaquo;</div>
       </div>
       <div id="btn-pay-usdc" class="pay-option">
         <div class="pay-token">&#128176;</div>
@@ -318,26 +221,34 @@
           <div class="pay-amount">$0.10 USDC</div>
           <div class="pay-desc">Stablecoin</div>
         </div>
-        <div class="pay-arrow">&rarr;</div>
+        <div class="pay-arrow">&rsaquo;</div>
       </div>
     </div>
-    <p id="pay-status" class="info" style="font-size:0.85rem;min-height:1.2em"></p>
+    <div class="spacer"></div>
+    <p id="pay-status" class="info"></p>
   </div>
 
   <!-- Screen 3: Number + Agent Setup + Inbox -->
   <div id="screen-number" class="screen">
-    <p class="label">Your number</p>
-    <div id="phone-card" class="phone-card">
+    <p class="label">Your Number</p>
+    <div id="phone-card" class="phone-card reveal">
       <div id="phone-number" class="phone-number"></div>
-      <div class="phone-hint">Tap to copy</div>
+      <div class="phone-meta">
+        <span class="phone-badge">Active</span>
+        <span class="phone-badge expires" id="phone-expires"></span>
+      </div>
+      <div class="phone-hint">tap to copy</div>
       <div id="copied-toast" class="copied-toast">Copied!</div>
     </div>
-    <p class="subtitle">Text or call this number - your agents see everything.</p>
+    <p class="subtitle" style="font-size:0.82rem">Text or call this number. Your agents see everything via API or XMTP.</p>
 
     <div class="divider"></div>
 
-    <p class="label">Agent Setup</p>
-    <div class="agent-config">
+    <div class="section-toggle" id="toggle-agent">
+      <span class="label" style="width:auto">Agent Setup</span>
+      <span class="arrow">&rsaquo;</span>
+    </div>
+    <div class="section-content" id="agent-config">
       <div class="config-row" id="cfg-humanid">
         <span class="config-label">Human ID</span>
         <span class="config-value" id="cfg-humanid-val"></span>
@@ -347,16 +258,16 @@
         <span class="config-value" id="cfg-xmtp-val"></span>
       </div>
       <div class="config-row" id="cfg-api">
-        <span class="config-label">API</span>
+        <span class="config-label">API Endpoint</span>
         <span class="config-value" id="cfg-api-val"></span>
       </div>
+      <button id="btn-copy-config" class="btn btn-outline" style="font-size:0.8rem;padding:0.6rem;margin-top:0.25rem"><span class="btn-text">Copy Agent Config</span></button>
     </div>
-    <button id="btn-copy-config" class="btn btn-outline" style="font-size:0.85rem;padding:0.75rem"><span class="btn-text">Copy Agent Config</span></button>
 
     <div class="divider"></div>
 
     <div class="inbox-header">
-      <p class="label">Inbox</p>
+      <span class="label" style="width:auto">Inbox</span>
       <button id="btn-refresh" class="btn btn-outline btn-sm"><span class="btn-text">Refresh</span></button>
     </div>
     <div id="inbox-list" class="inbox">
