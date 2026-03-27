@@ -7,7 +7,7 @@
  *
  * Billing: each number has a status (active/suspended/released)
  * and a paid_until timestamp. Numbers are suspended after expiry,
- * released after a 30-day grace period.
+ * released after a 7-day grace period.
  */
 
 import Database from "better-sqlite3";

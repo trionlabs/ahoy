@@ -136,7 +136,7 @@ Provision -> Active (30 days included)
                 v
            Suspended (SMS/voice stop, number reserved)
                 |
-         30-day grace period
+         7-day grace period
                 |
                 v
            Released (number returned to Twilio, mapping cleared)
