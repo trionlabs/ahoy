@@ -253,6 +253,19 @@ pnpm run costs                  # check call costs + active numbers
 pnpm run typecheck              # type-check the project
 ```
 
+### Wallet Scripts
+
+```bash
+# Bridge ETH from Ethereum mainnet to World Chain
+PRIVATE_KEY=0x... npx tsx scripts/bridge-to-world.ts 0.005
+
+# Send ETH on World Chain
+PRIVATE_KEY=0x... npx tsx scripts/send-eth-worldchain.ts <to> <amount>
+
+# Send USDC on World Chain
+PRIVATE_KEY=0x... npx tsx scripts/send-usdc-worldchain.ts <to> <amount>
+```
+
 ### Mini App
 
 Open `http://localhost:4021/app` in a browser (dev mode) or in World App (production).
@@ -282,6 +295,7 @@ Open `http://localhost:4021/app` in a browser (dev mode) or in World App (produc
 | `POST` | `/provision` | x402 + AgentKit | Provision a number |
 | `GET` | `/number` | x402 + AgentKit | Get assigned number |
 | `GET` | `/messages` | x402 + AgentKit | Read SMS inbox |
+| `GET` | `/verify-phone?phone=+1..` | x402 | Check if phone is backed by verified human |
 | `POST` | `/renew` | x402 + AgentKit | Extend billing 30 days |
 | `GET` | `/status` | x402 + AgentKit | Check number status and billing |
 | `POST` | `/webhook/sms` | - | Twilio SMS webhook |
@@ -289,6 +303,8 @@ Open `http://localhost:4021/app` in a browser (dev mode) or in World App (produc
 | `GET` | `/app` | - | Mini App (World App) |
 | `GET` | `/dashboard` | - | Sybil resistance dashboard |
 | `GET` | `/health` | - | Health check + XMTP address |
+| `GET` | `/.well-known/x402` | - | x402 service discovery |
+| `GET` | `/openapi.json` | - | OpenAPI spec |
 
 ---
 
