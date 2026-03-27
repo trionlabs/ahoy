@@ -35,7 +35,7 @@ import {
   releaseNumber,
   extendBilling,
 } from "./storage.js";
-import { provisionNumber, makeAICall, twilio } from "./twilio.js";
+import { provisionNumber, twilio } from "./twilio.js";
 import { initEas, attestProvision, easEnabled } from "./eas.js";
 // XMTP loaded dynamically - native bindings may not be available
 let initXmtp: () => Promise<void> = async () => {};
@@ -148,6 +148,29 @@ const routes = {
       }),
     },
   },
+  "POST /renew": {
+    accepts: [
+      {
+        scheme: "exact" as const,
+        price: "$0.10",
+        network: WORLD_CHAIN,
+        payTo: PAY_TO,
+      },
+    ],
+    extensions: {
+      ...declareAgentkitExtension({
+        statement: "Renew your phone number for another 30 days",
+        mode: { type: "free-trial" as const, uses: 1 },
+      }),
+      ...declareDiscoveryExtension({
+        bodyType: "json" as const,
+        input: {},
+        output: {
+          example: { status: "active", paidUntil: "2026-05-01T00:00:00Z" },
+        },
+      }),
+    },
+  },
 };
 
 // --- x402 Resource Server with AgentKit + Bazaar ---
@@ -162,6 +185,23 @@ const httpServer = new x402HTTPResourceServer(resourceServer, routes)
 // --- Hono App ---
 const app = new Hono();
 
+// --- Rate limiting (simple in-memory, per IP) ---
+const rateLimitMap = new Map<string, { count: number; reset: number }>();
+app.use(async (c, next) => {
+  const ip = c.req.header("x-forwarded-for") || "unknown";
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.reset) {
+    rateLimitMap.set(ip, { count: 1, reset: now + 60000 }); // 60s window
+  } else {
+    entry.count++;
+    if (entry.count > 60) { // 60 requests per minute
+      return c.json({ error: "Rate limited" }, 429);
+    }
+  }
+  await next();
+});
+
 // x402 + AgentKit payment middleware (protects declared routes)
 // Skipped in dev mode so we can test without wallets/payment
 if (!DEV_MODE) {
@@ -172,9 +212,10 @@ if (!DEV_MODE) {
 
 // --- Helper: extract humanId + wallet address from agentkit header ---
 async function resolveAgent(req: Request): Promise<{ humanId: string; wallet?: string } | null> {
-  if (DEV_MODE) {
-    const devHumanId = req.headers.get("X-Dev-Human-Id");
-    if (devHumanId) return { humanId: devHumanId };
+  // DEV_MODE or X-Demo-Key header (for sybil demo without toggling DEV_MODE)
+  const devHumanId = req.headers.get("X-Dev-Human-Id");
+  if (devHumanId && (DEV_MODE || req.headers.get("X-Demo-Key") === process.env.TWILIO_AUTH_TOKEN)) {
+    return { humanId: devHumanId };
   }
 
   const header = req.headers.get(AGENTKIT);
@@ -207,10 +248,16 @@ app.post("/provision", async (c) => {
   const notify = c.req.query("notify"); // "xmtp" or omit for API polling
 
   // Core invariant: one human -> one number
-  const existing = getNumberByHuman(humanId);
-  if (existing) {
+  const existingStatus = getNumberStatus(humanId);
+  if (existingStatus && existingStatus.status !== "released") {
     if (notify === "xmtp" && wallet) registerXmtpSubscriber(humanId, wallet);
-    return c.json({ phoneNumber: existing, provisioned: false, notify: notify || "api" });
+    return c.json({
+      phoneNumber: existingStatus.phoneNumber,
+      provisioned: false,
+      status: existingStatus.status,
+      paidUntil: new Date(existingStatus.paidUntil * 1000).toISOString(),
+      notify: notify || "api",
+    });
   }
 
   // Prevent concurrent provisioning for the same human
@@ -378,7 +425,8 @@ app.post("/webhook/voice", async (c) => {
     }
   }
 
-  const twiml = buildGreetingTwiml(`${BASE_URL}/webhook/voice/gather`);
+  const calledHumanId = to ? getHumanByNumber(to) : undefined;
+  const twiml = buildGreetingTwiml(`${BASE_URL}/webhook/voice/gather`, calledHumanId ?? undefined);
   return c.text(twiml, 200, { "Content-Type": "text/xml" });
 });
 

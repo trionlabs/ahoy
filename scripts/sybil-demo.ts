@@ -65,7 +65,10 @@ async function liveProvision(agent: Agent): Promise<Result> {
   try {
     const res = await fetch(`${SERVER}/provision`, {
       method: "POST",
-      headers: { "X-Dev-Human-Id": agent.humanId },
+      headers: {
+        "X-Dev-Human-Id": agent.humanId,
+        "X-Demo-Key": process.env.TWILIO_AUTH_TOKEN || "",
+      },
     });
 
     if (!res.ok) {

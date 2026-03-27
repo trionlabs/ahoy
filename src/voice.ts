@@ -56,7 +56,7 @@ export async function getAIResponse(
   return text;
 }
 
-export function buildGreetingTwiml(gatherUrl: string): string {
+export function buildGreetingTwiml(gatherUrl: string, humanId?: string): string {
   const r = new twilio.twiml.VoiceResponse();
   const g = r.gather({
     input: ["speech"],
@@ -66,10 +66,10 @@ export function buildGreetingTwiml(gatherUrl: string): string {
     timeout: 15,
     language: "en-US",
   });
-  g.say(
-    { voice: "Polly.Joanna" as any },
-    "Hello! I'm Ahoy. How can I help you?",
-  );
+  const greeting = humanId
+    ? `Hello! I'm the AI assistant for a verified human on ahoy. How can I help you?`
+    : "Hello! I'm Ahoy. How can I help you?";
+  g.say({ voice: "Polly.Joanna" as any }, greeting);
   // If gather times out, loop back instead of hanging up
   r.redirect(gatherUrl.replace("/gather", ""));
   return r.toString();

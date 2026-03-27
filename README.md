@@ -195,14 +195,14 @@ The v4 body wraps proofs in a `responses[]` array with an `identifier` field (ve
 
 ```bash
 # Install
-npm install
+pnpm install
 
 # Configure
 cp .env.example .env
 # Fill in: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, PAY_TO_ADDRESS, ANTHROPIC_API_KEY, BASE_URL
 
 # Run
-npm run dev
+pnpm run dev
 ```
 
 ```bash
