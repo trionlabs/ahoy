@@ -266,8 +266,10 @@ async function doVerify() {
 
     humanId = data.humanId;
 
-    allNumbers = data.numbers || (data.phoneNumber ? [{ id: 0, phoneNumber: data.phoneNumber, status: "active", paidUntil: 0 }] : []);
-    if (allNumbers.length > 0) {
+    allNumbers = data.numbers || [];
+    if (data.needsPayment) {
+      showScreen("screen-pay");
+    } else if (allNumbers.length > 0) {
       phoneNumber = allNumbers[0].phoneNumber;
       showNumberScreen();
     } else {

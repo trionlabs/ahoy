@@ -199,6 +199,75 @@ app.use(async (c, next) => {
   await next();
 });
 
+// --- x402 discovery (for x402scan + agentcash) ---
+app.get("/.well-known/x402", (c) => {
+  return c.json({
+    version: 1,
+    resources: [
+      `${BASE_URL}/provision`,
+      `${BASE_URL}/number`,
+      `${BASE_URL}/renew`,
+    ],
+  });
+});
+
+app.get("/openapi.json", (c) => {
+  return c.json({
+    openapi: "3.1.0",
+    info: {
+      title: "ahoy",
+      description: "Sybil-resistant phone numbers with AI-powered calls and SMS for agents",
+      version: "1.0.0",
+    },
+    servers: [{ url: BASE_URL }],
+    paths: {
+      "/provision": {
+        post: {
+          summary: "Provision a phone number",
+          description: "Get a sybil-resistant phone number backed by World ID. Free trial for verified humans.",
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "$0.10" },
+          parameters: [
+            { name: "notify", in: "query", schema: { type: "string", enum: ["xmtp", "api"] }, description: "SMS delivery: xmtp (forwarded via XMTP) or api (poll /messages)" },
+          ],
+          responses: {
+            "200": { description: "Number provisioned or returned", content: { "application/json": { schema: { type: "object", properties: { phoneNumber: { type: "string" }, provisioned: { type: "boolean" } } } } } },
+            "402": { description: "Payment required" },
+          },
+        },
+      },
+      "/number": {
+        get: {
+          summary: "Get assigned phone number",
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "$0.01" },
+          responses: {
+            "200": { description: "Phone number", content: { "application/json": { schema: { type: "object", properties: { phoneNumber: { type: "string" } } } } } },
+            "402": { description: "Payment required" },
+          },
+        },
+      },
+      "/renew": {
+        post: {
+          summary: "Renew phone number for 30 days",
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "$0.10" },
+          responses: {
+            "200": { description: "Renewed", content: { "application/json": { schema: { type: "object", properties: { renewed: { type: "boolean" } } } } } },
+            "402": { description: "Payment required" },
+          },
+        },
+      },
+      "/messages": {
+        get: {
+          summary: "Read SMS inbox",
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "$0.01" },
+          responses: {
+            "200": { description: "Messages", content: { "application/json": { schema: { type: "object", properties: { messages: { type: "array" } } } } } },
+          },
+        },
+      },
+    },
+  });
+});
+
 // x402 + AgentKit payment middleware (protects declared routes)
 // Skipped in dev mode so we can test without wallets/payment
 if (!DEV_MODE) {
@@ -610,15 +679,13 @@ app.post("/app/verify", async (c) => {
     });
   }
 
-  // First time: auto-provision one number
-  let phoneNumber: string | null = null;
-  {
+  // First-time user: auto-provision in dev mode, show pay screen in production
+  if (DEV_MODE) {
     try {
       const { phoneNumber: num, sid } = await provisionNumber(BASE_URL);
       setNumber(humanId, num, sid);
       await attestProvision(humanId);
-      phoneNumber = num;
-      console.log(`[miniapp] auto-provisioned ${humanId} -> ${phoneNumber}`);
+      console.log(`[miniapp] auto-provisioned ${humanId} -> ${num}`);
     } catch (e) {
       console.error("[miniapp] auto-provision failed:", e);
     }
@@ -628,6 +695,7 @@ app.post("/app/verify", async (c) => {
     humanId,
     numbers: getNumbersByHuman(humanId),
     verified: true,
+    needsPayment: !DEV_MODE && getNumbersByHuman(humanId).length === 0,
   });
 });
 
