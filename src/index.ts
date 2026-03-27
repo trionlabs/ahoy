@@ -230,8 +230,8 @@ app.get("/openapi.json", (c) => {
     openapi: "3.1.0",
     info: {
       title: "ahoy",
-      description: "Sybil-resistant phone numbers with AI-powered calls and SMS for agents",
-      version: "1.0.0",
+      description: "Sybil-resistant phone numbers with AI-powered calls and SMS for agents. WARNING: This is a proof of concept. Service may be unstable, numbers may be released without notice. Use at your own risk.",
+      version: "0.1.0-poc",
     },
     servers: [{ url: BASE_URL }],
     paths: {
