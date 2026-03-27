@@ -432,6 +432,7 @@ async function releasePhone(phone: string) {
       } else {
         phoneNumber = null;
         if (inboxInterval) clearInterval(inboxInterval);
+        setBtnLoading("btn-verify", false);
         showScreen("screen-verify");
         setStatus("All numbers released. Sign in to provision new ones.", "info");
       }
