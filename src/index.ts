@@ -73,19 +73,25 @@ const WORLD_APP_ID = process.env.WORLD_APP_ID as `app_${string}` | undefined;
 
 const WORLD_CHAIN: `${string}:${string}` = "eip155:480";
 const WORLD_USDC = "0x79A02482A880bCE3F13e09Da970dC34db4CD24d1";
+const BASE_CHAIN: `${string}:${string}` = "eip155:8453";
+const BASE_USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
 // --- x402 Facilitator ---
 const facilitatorClient = new HTTPFacilitatorClient({
   url: FACILITATOR_URL,
 });
 
-// --- EVM Payment Scheme (Worldchain USDC) ---
+// --- EVM Payment Scheme (World Chain + Base USDC) ---
 const evmScheme = new ExactEvmScheme().registerMoneyParser(
   async (amount: number, network: string) => {
-    if (network !== WORLD_CHAIN) return null;
+    const usdc: Record<string, string> = {
+      [WORLD_CHAIN]: WORLD_USDC,
+      [BASE_CHAIN]: BASE_USDC,
+    };
+    if (!usdc[network]) return null;
     return {
       amount: String(Math.round(amount * 1e6)),
-      asset: WORLD_USDC,
+      asset: usdc[network],
       extra: { name: "USD Coin", version: "2" },
     };
   },
@@ -108,12 +114,8 @@ const hooks = createAgentkitHooks({
 const routes = {
   "POST /provision": {
     accepts: [
-      {
-        scheme: "exact" as const,
-        price: "$0.10",
-        network: WORLD_CHAIN,
-        payTo: PAY_TO,
-      },
+      { scheme: "exact" as const, price: "$0.10", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.10", network: BASE_CHAIN, payTo: PAY_TO },
     ],
     extensions: {
       ...declareAgentkitExtension({
@@ -131,12 +133,8 @@ const routes = {
   },
   "GET /number": {
     accepts: [
-      {
-        scheme: "exact" as const,
-        price: "$0.01",
-        network: WORLD_CHAIN,
-        payTo: PAY_TO,
-      },
+      { scheme: "exact" as const, price: "$0.01", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.01", network: BASE_CHAIN, payTo: PAY_TO },
     ],
     extensions: {
       ...declareAgentkitExtension({
@@ -152,12 +150,8 @@ const routes = {
   },
   "POST /renew": {
     accepts: [
-      {
-        scheme: "exact" as const,
-        price: "$0.10",
-        network: WORLD_CHAIN,
-        payTo: PAY_TO,
-      },
+      { scheme: "exact" as const, price: "$0.10", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.10", network: BASE_CHAIN, payTo: PAY_TO },
     ],
     extensions: {
       ...declareAgentkitExtension({
@@ -178,6 +172,7 @@ const routes = {
 // --- x402 Resource Server with AgentKit + Bazaar ---
 const resourceServer = new x402ResourceServer(facilitatorClient)
   .register(WORLD_CHAIN, evmScheme)
+  .register(BASE_CHAIN, evmScheme)
   .registerExtension(agentkitResourceServerExtension)
   .registerExtension(bazaarResourceServerExtension);
 
