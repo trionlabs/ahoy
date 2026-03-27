@@ -5,10 +5,11 @@
  * Agent sends XMTP message -> sent as SMS from ahoy number
  *
  * Commands (via XMTP DM to the ahoy agent):
- *   register <humanId>          - link your XMTP address to a provisioned number
- *   send <+phone> <message>     - send SMS from your ahoy number
- *   inbox                       - read recent SMS messages
- *   status                      - check your registration
+ *   /register <humanId>         - link your XMTP address to a provisioned number
+ *   /dm <+phone> <message>      - send SMS from your ahoy number
+ *   /inbox                      - read recent SMS messages
+ *   /status                     - check your registration
+ *   /help                       - show available commands
  */
 
 import { Agent, IdentifierKind, getTestUrl } from "@xmtp/agent-sdk";
@@ -49,9 +50,9 @@ export async function initXmtp(): Promise<void> {
     const text = (ctx.message.content as string).trim();
     const cmd = text.toLowerCase();
 
-    // register <humanId>
-    if (cmd.startsWith("register ")) {
-      const humanId = text.slice(9).trim();
+    // /register <humanId>
+    if (cmd.startsWith("/register ")) {
+      const humanId = text.slice(10).trim();
       const phone = getNumberByHuman(humanId);
       if (!phone) {
         await ctx.conversation.sendText(
@@ -62,22 +63,22 @@ export async function initXmtp(): Promise<void> {
       xmtpSubscribers.set(humanId, senderAddress);
       addressToHuman.set(senderAddress.toLowerCase(), humanId);
       await ctx.conversation.sendText(
-        `Registered! SMS to ${phone} will be forwarded here.\nSend "send <+phone> <message>" to send SMS.`,
+        `Registered! SMS to ${phone} will be forwarded here.\nUse /dm to send SMS.`,
       );
       return;
     }
 
-    // send <+phone> <message>
-    if (cmd.startsWith("send ")) {
-      const match = text.match(/^send\s+(\+\d+)\s+(.+)$/s);
+    // /dm <+phone> <message>
+    if (cmd.startsWith("/dm ")) {
+      const match = text.match(/^\/dm\s+(\+\d+)\s+(.+)$/s);
       if (!match) {
-        await ctx.conversation.sendText("Usage: send +15551234567 Your message here");
+        await ctx.conversation.sendText("Usage: /dm +15551234567 Your message here");
         return;
       }
       const [, toPhone, body] = match;
       const humanId = addressToHuman.get(senderAddress.toLowerCase());
       if (!humanId) {
-        await ctx.conversation.sendText('Not registered. Send "register <humanId>" first.');
+        await ctx.conversation.sendText("Not registered. Use /register <humanId> first.");
         return;
       }
       const fromPhone = getNumberByHuman(humanId);
@@ -94,11 +95,11 @@ export async function initXmtp(): Promise<void> {
       return;
     }
 
-    // inbox
-    if (cmd === "inbox") {
+    // /inbox
+    if (cmd === "/inbox") {
       const humanId = addressToHuman.get(senderAddress.toLowerCase());
       if (!humanId) {
-        await ctx.conversation.sendText('Not registered. Send "register <humanId>" first.');
+        await ctx.conversation.sendText("Not registered. Use /register <humanId> first.");
         return;
       }
       const messages = getMessages(humanId);
@@ -114,8 +115,8 @@ export async function initXmtp(): Promise<void> {
       return;
     }
 
-    // status
-    if (cmd === "status") {
+    // /status
+    if (cmd === "/status") {
       const humanId = addressToHuman.get(senderAddress.toLowerCase());
       if (!humanId) {
         await ctx.conversation.sendText("Not registered.");
@@ -126,14 +127,14 @@ export async function initXmtp(): Promise<void> {
       return;
     }
 
-    // help
+    // /help or unknown
     await ctx.conversation.sendText(
       "ahoy XMTP Bridge\n\n" +
-        "Commands:\n" +
-        "  register <humanId> - link to your ahoy number\n" +
-        "  send <+phone> <msg> - send SMS\n" +
-        "  inbox - read recent SMS\n" +
-        "  status - check registration",
+        "/register <humanId> - link to your ahoy number\n" +
+        "/dm <+phone> <msg> - send SMS\n" +
+        "/inbox - read recent SMS\n" +
+        "/status - check registration\n" +
+        "/help - show this message",
     );
   });
 
