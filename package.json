@@ -7,7 +7,14 @@
     "postinstall": "bash scripts/fix-xmtp-bindings.sh 2>/dev/null || true",
     "build:client": "esbuild src/client.ts --bundle --outfile=public/app.js --format=esm --target=es2020 --minify",
     "dev": "pnpm run build:client && tsx watch src/index.ts",
-    "start": "pnpm run build:client && tsx src/index.ts"
+    "start": "pnpm run build:client && tsx src/index.ts",
+    "release": "tsx scripts/release-numbers.ts",
+    "costs": "tsx scripts/costs.ts",
+    "call": "tsx scripts/call.ts",
+    "sybil": "tsx scripts/sybil-demo.ts",
+    "sybil:dry": "tsx scripts/sybil-demo.ts 100 5 --dry-run",
+    "dashboard": "tsx scripts/sybil-dashboard.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
