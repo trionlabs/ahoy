@@ -34,11 +34,10 @@ import {
   getMessages,
   suspendNumberById,
   releaseNumberById,
-  releaseNumberByHuman,
   extendBillingById,
   MAX_NUMBERS,
 } from "./storage.js";
-import { provisionNumber, twilio } from "./twilio.js";
+import { provisionNumber, twilio, twilioClient } from "./twilio.js";
 import { initEas, attestProvision, easEnabled } from "./eas.js";
 // XMTP loaded dynamically - native bindings may not be available
 let initXmtp: () => Promise<void> = async () => {};
@@ -704,11 +703,29 @@ app.post("/app/pay/confirm", async (c) => {
   }
 });
 
-// POST /app/release, release a specific number
+// POST /app/release, release a specific number (DB + Twilio)
 app.post("/app/release", async (c) => {
   const { humanId, phoneNumber: releasePhone } = (await c.req.json()) as { humanId: string; phoneNumber: string };
   if (!humanId || !releasePhone) return c.json({ error: "Missing humanId or phoneNumber" }, 400);
-  releaseNumberByHuman(humanId, releasePhone);
+
+  // Find the number record to get the Twilio SID
+  const nums = getNumbersByHuman(humanId);
+  const match = nums.find((n) => n.phoneNumber === releasePhone);
+  if (!match) return c.json({ error: "Number not found" }, 404);
+
+  // Release from DB
+  const result = releaseNumberById(match.id);
+
+  // Release from Twilio
+  if (result?.sid) {
+    try {
+      await twilioClient.incomingPhoneNumbers(result.sid).remove();
+      console.log(`[miniapp] released from Twilio: ${releasePhone} (${result.sid})`);
+    } catch (e) {
+      console.error(`[miniapp] Twilio release failed:`, e);
+    }
+  }
+
   console.log(`[miniapp] released ${humanId} -> ${releasePhone}`);
   return c.json({ released: true, remaining: getNumbersByHuman(humanId) });
 });
@@ -754,8 +771,6 @@ app.post("/renew", async (c) => {
 
 // --- Billing lifecycle enforcement ---
 
-// twilioClient available from "./twilio.js" for Twilio API calls if needed
-
 function runBillingCycle() {
   const now = Math.floor(Date.now() / 1000);
   const sevenDays = 7 * 86400;
@@ -769,7 +784,10 @@ function runBillingCycle() {
       suspended++;
       console.log(`[billing] suspended #${m.id} (${m.humanId})`);
     } else if (m.status === "suspended" && m.paidUntil + sevenDays < now) {
-      releaseNumberById(m.id);
+      const result = releaseNumberById(m.id);
+      if (result?.sid) {
+        twilioClient.incomingPhoneNumbers(result.sid).remove().catch(() => {});
+      }
       released++;
       console.log(`[billing] released #${m.id} (${m.humanId})`);
     }

@@ -78,7 +78,7 @@ const stmtGetByHuman = db.prepare(
   "SELECT id, phone_encrypted, phone_iv, status, paid_until FROM numbers WHERE human_id = ? AND status != 'released'",
 );
 const stmtGetById = db.prepare(
-  "SELECT id, human_id, phone_encrypted, phone_iv, status, paid_until FROM numbers WHERE id = ?",
+  "SELECT id, human_id, phone_encrypted, phone_iv, sid, status, paid_until FROM numbers WHERE id = ?",
 );
 const stmtCountActive = db.prepare(
   "SELECT COUNT(*) as count FROM numbers WHERE human_id = ? AND status != 'released'",
@@ -231,17 +231,17 @@ export function suspendNumberById(id: number): void {
   stmtUpdateStatus.run("suspended", id);
 }
 
-export function releaseNumberById(id: number): void {
+export function releaseNumberById(id: number): { sid: string } | null {
   const row = stmtGetById.get(id) as
-    | { phone_encrypted: string; phone_iv: string }
+    | { phone_encrypted: string; phone_iv: string; sid: string }
     | undefined;
-  if (row) {
-    try {
-      const phone = decrypt(row.phone_encrypted, row.phone_iv);
-      phoneToHuman.delete(phone);
-    } catch { /* ignore */ }
-  }
+  if (!row) return null;
+  try {
+    const phone = decrypt(row.phone_encrypted, row.phone_iv);
+    phoneToHuman.delete(phone);
+  } catch { /* ignore */ }
   stmtUpdateStatus.run("released", id);
+  return { sid: row.sid };
 }
 
 export function releaseNumberByHuman(humanId: string, phoneNumber: string): void {
