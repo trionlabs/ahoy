@@ -507,9 +507,10 @@ const paymentRefs = new Map<string, { humanId: string; createdAt: number }>();
 
 // POST /app/verify, verify World ID proof, check if already provisioned
 app.post("/app/verify", async (c) => {
-  const { payload, action } = (await c.req.json()) as {
+  const { payload, action, provisionNew } = (await c.req.json()) as {
     payload: ISuccessResult;
     action: string;
+    provisionNew?: boolean;
   };
 
   if (!WORLD_APP_ID || DEV_MODE) {
@@ -570,16 +571,26 @@ app.post("/app/verify", async (c) => {
     console.log(`[miniapp] reactivated ${humanId} -> ${s.phoneNumber}`);
   }
 
-  // Return existing numbers if any
-  if (numbers.length > 0) {
+  // Return existing numbers (unless requesting a new one)
+  if (numbers.length > 0 && !provisionNew) {
     return c.json({
       humanId,
-      numbers: getNumbersByHuman(humanId), // refresh after reactivation
+      numbers: getNumbersByHuman(humanId),
       verified: true,
     });
   }
 
-  // Auto-provision first number
+  // Check quota
+  if (getActiveCount(humanId) >= MAX_NUMBERS) {
+    return c.json({
+      humanId,
+      numbers: getNumbersByHuman(humanId),
+      verified: true,
+      error: `Quota reached: ${MAX_NUMBERS} numbers`,
+    });
+  }
+
+  // Provision number
   let phoneNumber: string | null = null;
   {
     try {

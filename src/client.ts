@@ -16,7 +16,8 @@ import {
 
 // --- State ---
 let humanId: string | null = null;
-let phoneNumber: string | null = null;
+let phoneNumber: string | null = null; // first/primary number
+let allNumbers: Array<{ id: number; phoneNumber: string; status: string; paidUntil: number }> = [];
 let devMode = false;
 let inboxInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -79,6 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   $("btn-pay-wld").addEventListener("click", () => doPay("wld"));
   $("btn-pay-usdc").addEventListener("click", () => doPay("usdc"));
+  $("btn-provision-new").addEventListener("click", doProvisionNew);
   $("btn-release").addEventListener("click", doRelease);
   $("btn-refresh").addEventListener("click", () => {
     setBtnLoading("btn-refresh", true);
@@ -107,62 +109,67 @@ function formatPhone(num: string): string {
   return num;
 }
 
-// --- Show number screen with agent config ---
-async function showNumberScreen(paidUntil?: string) {
-  $("phone-number").textContent = formatPhone(phoneNumber!);
+// --- Show number screen with all numbers ---
+async function showNumberScreen() {
+  // Render number cards
+  const list = $("numbers-list");
+  list.innerHTML = allNumbers
+    .map((n) => {
+      const expiry = n.paidUntil ? new Date(n.paidUntil * 1000).toLocaleDateString() : "";
+      const badge = n.status === "active"
+        ? `<span class="phone-badge">Active</span>`
+        : `<span class="phone-badge" style="background:#2a1a1a;color:#ff6b6b">${n.status}</span>`;
+      return `<div class="phone-card reveal" data-phone="${n.phoneNumber}">
+        <div class="phone-number">${formatPhone(n.phoneNumber)}</div>
+        <div class="phone-meta">${badge}${expiry ? `<span class="phone-badge expires">Until ${expiry}</span>` : ""}</div>
+        <div class="phone-hint">tap to copy</div>
+      </div>`;
+    })
+    .join("");
 
-  // Billing badge
-  if (paidUntil) {
-    const d = new Date(paidUntil);
-    $("phone-expires").textContent = `Until ${d.toLocaleDateString()}`;
-  } else {
-    $("phone-expires").textContent = "30 days";
-  }
+  // Tap to copy on each card
+  list.querySelectorAll(".phone-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      copyToClipboard((card as HTMLElement).dataset.phone || "");
+    });
+  });
+
+  // Quota
+  $("quota-text").textContent = `${allNumbers.length}/5 numbers`;
+
+  // Show/hide provision button
+  const btnProvision = $("btn-provision-new");
+  btnProvision.style.display = allNumbers.length < 5 ? "block" : "none";
 
   // Agent config
-  const truncId = humanId!.length > 20
-    ? humanId!.slice(0, 10) + "..." + humanId!.slice(-8)
-    : humanId!;
-  $("cfg-humanid-val").textContent = truncId;
-  $("cfg-humanid-val").title = humanId!;
-  $("cfg-xmtp-val").textContent = "0xc56d91...48e3d";
-  $("cfg-api-val").textContent = window.location.origin + "/messages";
-
-  // Fetch XMTP address from server
   let xmtpAddr = "";
   try {
     const h = await fetch("/health").then((r) => r.json());
     xmtpAddr = h.xmtp || "";
   } catch { /* ignore */ }
 
+  const truncId = humanId!.length > 20
+    ? humanId!.slice(0, 10) + "..." + humanId!.slice(-8)
+    : humanId!;
+  $("cfg-humanid-val").textContent = truncId;
+  $("cfg-xmtp-val").textContent = xmtpAddr ? xmtpAddr.slice(0, 8) + "..." + xmtpAddr.slice(-4) : "";
+  $("cfg-api-val").textContent = window.location.origin + "/messages";
+
   const apiBase = window.location.origin;
-
-  // Tap to copy individual values
-  $("cfg-humanid").addEventListener("click", () => copyToClipboard(humanId!));
-  $("cfg-xmtp").addEventListener("click", () => copyToClipboard(xmtpAddr));
-  $("cfg-api").addEventListener("click", () => copyToClipboard(apiBase + "/messages"));
-
-  // Copy full agent config boilerplate
-  $("btn-copy-config").addEventListener("click", () => {
+  $("cfg-humanid").onclick = () => copyToClipboard(humanId!);
+  $("cfg-xmtp").onclick = () => copyToClipboard(xmtpAddr);
+  $("cfg-api").onclick = () => copyToClipboard(apiBase + "/messages");
+  $("btn-copy-config").onclick = () => {
+    const nums = allNumbers.map((n) => n.phoneNumber).join(", ");
     const config = [
       "# ahoy - Agent Configuration",
-      "",
-      `PHONE_NUMBER=${phoneNumber}`,
       `HUMAN_ID=${humanId}`,
-      "",
-      "# Option 1: Poll API for SMS",
-      `GET ${apiBase}/messages`,
-      `Header: X-Dev-Human-Id: ${humanId}`,
-      "",
-      "# Option 2: Receive SMS via XMTP",
-      `DM ${xmtpAddr} on XMTP with: register ${humanId}`,
-      "Then all incoming SMS will be forwarded to your XMTP inbox.",
-      "",
-      "# Send SMS via XMTP",
-      `DM ${xmtpAddr} with: send +1234567890 Your message here`,
+      `NUMBERS=${nums}`,
+      `API=${apiBase}/messages`,
+      `XMTP_BOT=${xmtpAddr}`,
     ].join("\n");
     copyToClipboard(config);
-  });
+  };
 
   showScreen("screen-number");
   startInboxPolling();
@@ -214,12 +221,10 @@ async function doVerify() {
 
     humanId = data.humanId;
 
-    // Handle multi-number response
-    const numbers = data.numbers || (data.phoneNumber ? [{ phoneNumber: data.phoneNumber, status: "active", paidUntil: 0 }] : []);
-    if (numbers.length > 0) {
-      phoneNumber = numbers[0].phoneNumber;
-      const paidUntil = numbers[0].paidUntil ? new Date(numbers[0].paidUntil * 1000).toISOString() : undefined;
-      showNumberScreen(paidUntil);
+    allNumbers = data.numbers || (data.phoneNumber ? [{ id: 0, phoneNumber: data.phoneNumber, status: "active", paidUntil: 0 }] : []);
+    if (allNumbers.length > 0) {
+      phoneNumber = allNumbers[0].phoneNumber;
+      showNumberScreen();
     } else {
       showScreen("screen-pay");
     }
@@ -341,21 +346,58 @@ function escapeHtml(s: string): string {
   return div.innerHTML;
 }
 
+// --- Provision new number ---
+async function doProvisionNew() {
+  if (!humanId) return;
+  setBtnLoading("btn-provision-new", true);
+  try {
+    const res = await fetch("/app/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        payload: { nullifier_hash: humanId, proof: "existing", merkle_root: "existing", verification_level: "device" },
+        action: "provision-number",
+        provisionNew: true,
+      }),
+    });
+    const data = await res.json();
+    if (data.numbers) {
+      allNumbers = data.numbers;
+      phoneNumber = allNumbers[0]?.phoneNumber ?? null;
+      showNumberScreen();
+    }
+  } catch { /* ignore */ }
+  setBtnLoading("btn-provision-new", false);
+}
+
 // --- Release ---
 async function doRelease() {
-  if (!confirm("Release this number? You'll lose it permanently.")) return;
+  const target = allNumbers.length === 1
+    ? allNumbers[0]
+    : (() => {
+        const idx = prompt(`Which number to release? (1-${allNumbers.length})\n${allNumbers.map((n, i) => `${i + 1}. ${formatPhone(n.phoneNumber)}`).join("\n")}`);
+        return idx ? allNumbers[parseInt(idx) - 1] : null;
+      })();
+  if (!target) return;
+  if (!confirm(`Release ${formatPhone(target.phoneNumber)}? You'll lose it permanently.`)) return;
   try {
     const res = await fetch("/app/release", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ humanId, phoneNumber }),
+      body: JSON.stringify({ humanId, phoneNumber: target.phoneNumber }),
     });
     const data = await res.json();
     if (data.released) {
-      phoneNumber = null;
-      if (inboxInterval) clearInterval(inboxInterval);
-      showScreen("screen-verify");
-      setStatus("Number released. Sign in to manage your numbers.", "info");
+      allNumbers = data.remaining || [];
+      if (allNumbers.length > 0) {
+        phoneNumber = allNumbers[0].phoneNumber;
+        showNumberScreen();
+      } else {
+        phoneNumber = null;
+        if (inboxInterval) clearInterval(inboxInterval);
+        showScreen("screen-verify");
+        setStatus("All numbers released. Sign in to provision new ones.", "info");
+      }
     }
   } catch {
     // ignore

@@ -235,19 +235,16 @@
     <p id="pay-status" class="info"></p>
   </div>
 
-  <!-- Screen 3: Number + Agent Setup + Inbox -->
+  <!-- Screen 3: Numbers + Agent Setup + Inbox -->
   <div id="screen-number" class="screen">
-    <p class="label">Your Number</p>
-    <div id="phone-card" class="phone-card reveal">
-      <div id="phone-number" class="phone-number"></div>
-      <div class="phone-meta">
-        <span class="phone-badge">Active</span>
-        <span class="phone-badge expires" id="phone-expires"></span>
-      </div>
-      <div class="phone-hint">tap to copy</div>
-      <div id="copied-toast" class="copied-toast">Copied!</div>
+    <div style="display:flex;width:100%;justify-content:space-between;align-items:center">
+      <span class="label" style="width:auto">Your Numbers</span>
+      <span class="label" style="width:auto;color:#7c8aff" id="quota-text"></span>
     </div>
-    <p class="subtitle" style="font-size:0.82rem">Text or call this number. Your agents see everything via API or XMTP.</p>
+    <div id="numbers-list" style="width:100%;display:flex;flex-direction:column;gap:0.5rem"></div>
+    <div id="copied-toast" class="copied-toast" style="position:fixed;bottom:2rem;left:50%;transform:translateX(-50%)">Copied!</div>
+    <button id="btn-provision-new" class="btn btn-outline" style="font-size:0.85rem;padding:0.7rem;display:none"><span class="btn-text">+ Provision New Number</span></button>
+    <p class="subtitle" style="font-size:0.82rem">Text or call any number. Your agents see everything via API or XMTP.</p>
 
     <div class="divider"></div>
 
