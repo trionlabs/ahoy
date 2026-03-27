@@ -231,6 +231,28 @@
       line-height: 1.5;
     }
 
+    /* Agent config */
+    .agent-config {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .config-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #111;
+      border-radius: 10px;
+      padding: 0.7rem 0.9rem;
+      border: 1px solid #1a1a1a;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .config-row:active { border-color: #444; }
+    .config-label { font-size: 0.7rem; color: #555; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .config-value { font-size: 0.75rem; color: #7c8aff; font-family: 'SF Mono', monospace; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
     /* Status */
     #status {
       font-size: 0.85rem;
@@ -302,7 +324,7 @@
     <p id="pay-status" class="info" style="font-size:0.85rem;min-height:1.2em"></p>
   </div>
 
-  <!-- Screen 3: Number + Inbox -->
+  <!-- Screen 3: Number + Agent Setup + Inbox -->
   <div id="screen-number" class="screen">
     <p class="label">Your number</p>
     <div id="phone-card" class="phone-card">
@@ -311,7 +333,28 @@
       <div id="copied-toast" class="copied-toast">Copied!</div>
     </div>
     <p class="subtitle">Text or call this number - your agents see everything.</p>
+
     <div class="divider"></div>
+
+    <p class="label">Agent Setup</p>
+    <div class="agent-config">
+      <div class="config-row" id="cfg-humanid">
+        <span class="config-label">Human ID</span>
+        <span class="config-value" id="cfg-humanid-val"></span>
+      </div>
+      <div class="config-row" id="cfg-xmtp">
+        <span class="config-label">XMTP Bot</span>
+        <span class="config-value" id="cfg-xmtp-val"></span>
+      </div>
+      <div class="config-row" id="cfg-api">
+        <span class="config-label">API</span>
+        <span class="config-value" id="cfg-api-val"></span>
+      </div>
+    </div>
+    <p class="subtitle" style="font-size:0.8rem">Tap any row to copy. Give these to your agents so they can read SMS via API or XMTP.</p>
+
+    <div class="divider"></div>
+
     <div class="inbox-header">
       <p class="label">Inbox</p>
       <button id="btn-refresh" class="btn btn-outline btn-sm"><span class="btn-text">Refresh</span></button>

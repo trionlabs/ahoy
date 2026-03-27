@@ -80,14 +80,46 @@ document.addEventListener("DOMContentLoaded", () => {
   $("phone-card").addEventListener("click", copyNumber);
 });
 
-// --- Copy number ---
-function copyNumber() {
-  if (!phoneNumber) return;
-  navigator.clipboard.writeText(phoneNumber).then(() => {
+// --- Copy to clipboard with toast ---
+function copyToClipboard(text: string) {
+  navigator.clipboard.writeText(text).then(() => {
     const toast = $("copied-toast");
     toast.classList.add("show");
     setTimeout(() => toast.classList.remove("show"), 1500);
   });
+}
+
+function copyNumber() {
+  if (phoneNumber) copyToClipboard(phoneNumber);
+}
+
+// --- Format phone number: +14783751706 -> +1 (478) 375-1706 ---
+function formatPhone(num: string): string {
+  const m = num.match(/^\+1(\d{3})(\d{3})(\d{4})$/);
+  if (m) return `+1 (${m[1]}) ${m[2]}-${m[3]}`;
+  return num;
+}
+
+// --- Show number screen with agent config ---
+function showNumberScreen() {
+  $("phone-number").textContent = formatPhone(phoneNumber!);
+
+  // Agent config
+  const truncId = humanId!.length > 20
+    ? humanId!.slice(0, 10) + "..." + humanId!.slice(-8)
+    : humanId!;
+  $("cfg-humanid-val").textContent = truncId;
+  $("cfg-humanid-val").title = humanId!;
+  $("cfg-xmtp-val").textContent = "0xc56d91...48e3d";
+  $("cfg-api-val").textContent = window.location.origin + "/messages";
+
+  // Tap to copy
+  $("cfg-humanid").addEventListener("click", () => copyToClipboard(humanId!));
+  $("cfg-xmtp").addEventListener("click", () => copyToClipboard("0xc56d916f4ac66f88fe8f08973cdba75946a48e3d"));
+  $("cfg-api").addEventListener("click", () => copyToClipboard(window.location.origin + "/messages"));
+
+  showScreen("screen-number");
+  startInboxPolling();
 }
 
 // --- Verify ---
@@ -138,9 +170,7 @@ async function doVerify() {
 
     if (data.phoneNumber) {
       phoneNumber = data.phoneNumber;
-      $("phone-number").textContent = phoneNumber;
-      showScreen("screen-number");
-      startInboxPolling();
+      showNumberScreen();
     } else {
       showScreen("screen-pay");
     }
@@ -208,9 +238,7 @@ async function doPay(token: "wld" | "usdc") {
     const data = await confirmRes.json();
     if (data.phoneNumber) {
       phoneNumber = data.phoneNumber;
-      $("phone-number").textContent = phoneNumber;
-      showScreen("screen-number");
-      startInboxPolling();
+      showNumberScreen();
     } else {
       setPayStatus(data.error || "Provisioning failed. Try again.");
     }
