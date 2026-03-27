@@ -50,8 +50,9 @@ try {
   forwardSmsToXmtp = xmtp.forwardSmsToXmtp;
   registerXmtpSubscriber = xmtp.registerXmtpSubscriber;
   getXmtpAddress = xmtp.getXmtpAddress;
-} catch (e) {
-  console.log("[xmtp] native bindings not available, bridge disabled");
+} catch (e: any) {
+  console.log("[xmtp] bridge disabled:", e?.message || e);
+  if (e?.cause) console.log("[xmtp] cause:", e.cause?.message || e.cause);
 }
 import {
   buildGreetingTwiml,
