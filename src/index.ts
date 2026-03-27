@@ -148,6 +148,19 @@ const routes = {
       }),
     },
   },
+  "GET /verify-phone": {
+    accepts: [
+      { scheme: "exact" as const, price: "$0.01", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.01", network: BASE_CHAIN, payTo: PAY_TO },
+    ],
+    extensions: {
+      ...declareDiscoveryExtension({
+        output: {
+          example: { verified: true, humanId: "0x1d73..." },
+        },
+      }),
+    },
+  },
   "POST /renew": {
     accepts: [
       { scheme: "exact" as const, price: "$0.10", network: WORLD_CHAIN, payTo: PAY_TO },
@@ -206,6 +219,7 @@ app.get("/.well-known/x402", (c) => {
     resources: [
       `${BASE_URL}/provision`,
       `${BASE_URL}/number`,
+      `${BASE_URL}/verify-phone`,
       `${BASE_URL}/renew`,
     ],
   });
@@ -261,6 +275,20 @@ app.get("/openapi.json", (c) => {
           "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "$0.01" },
           responses: {
             "200": { description: "Messages", content: { "application/json": { schema: { type: "object", properties: { messages: { type: "array" } } } } } },
+          },
+        },
+      },
+      "/verify-phone": {
+        get: {
+          summary: "Check if a phone number is backed by a verified human",
+          description: "Returns whether a phone number was provisioned through ahoy and the associated humanId.",
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "$0.01" },
+          parameters: [
+            { name: "phone", in: "query", required: true, schema: { type: "string" }, description: "Phone number in E.164 format (e.g. +14155551234)" },
+          ],
+          responses: {
+            "200": { description: "Verification result", content: { "application/json": { schema: { type: "object", properties: { verified: { type: "boolean" }, phoneNumber: { type: "string" }, humanId: { type: "string" } } } } } },
+            "402": { description: "Payment required" },
           },
         },
       },
@@ -381,6 +409,23 @@ app.get("/number", async (c) => {
   }
 
   return c.json({ phoneNumber });
+});
+
+// GET /verify-phone?phone=+14155551234, check if a phone is backed by a verified human
+app.get("/verify-phone", (c) => {
+  const phone = c.req.query("phone");
+  if (!phone) return c.json({ error: "Missing ?phone= parameter" }, 400);
+
+  const humanId = getHumanByNumber(phone);
+  if (!humanId) {
+    return c.json({ verified: false, phoneNumber: phone });
+  }
+
+  return c.json({
+    verified: true,
+    phoneNumber: phone,
+    humanId,
+  });
 });
 
 // POST /webhook/sms, Twilio forwards incoming SMS here

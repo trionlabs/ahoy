@@ -81,6 +81,7 @@ All incoming SMS will be forwarded to your XMTP address as DMs.
 | `POST` | `/provision?notify=xmtp` | $0.10 | Provision + auto-register for XMTP forwarding |
 | `GET` | `/number` | $0.01 | Get assigned numbers |
 | `GET` | `/messages` | $0.01 | Read SMS inbox |
+| `GET` | `/verify-phone?phone=+1...` | $0.01 | Check if a phone is backed by a verified human |
 | `POST` | `/renew` | $0.10 | Extend billing 30 days |
 | `GET` | `/status` | $0.01 | Check number status + billing |
 | `GET` | `/health` | free | Health check + XMTP bot address |
