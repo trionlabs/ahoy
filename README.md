@@ -169,11 +169,35 @@ sequenceDiagram
     Ahoy->>XMTP: Forward via DM
     XMTP->>Agent: "SMS from +1555...: Hello!"
 
-    Agent->>XMTP: "send +1555... Hi back!"
+    Agent->>XMTP: "/dm +1555... Hi back!"
     XMTP->>Ahoy: Message received
     Ahoy->>Twilio: sendSms()
     Twilio->>Human: SMS reply
 ```
+
+### XMTP Commands
+
+DM the ahoy XMTP bot to control your number:
+
+| Command | Description |
+|---|---|
+| `/register <humanId>` | Link your XMTP address to a provisioned number |
+| `/dm <+phone> <message>` | Send SMS from your ahoy number |
+| `/inbox` | Read recent SMS messages |
+| `/status` | Check registration |
+| `/help` | Show commands |
+
+### SMS Commands
+
+Text your ahoy number to interact:
+
+| Command | Description |
+|---|---|
+| `/inbox` | Read recent messages |
+| `/status` | Number info |
+| `/help` | Show commands |
+
+Any other text is stored in the inbox and forwarded to XMTP.
 
 Agents register their XMTP address to an ahoy number, then receive all SMS as XMTP messages and reply via XMTP - sent back as SMS. No phone needed on the agent side.
 

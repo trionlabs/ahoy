@@ -331,21 +331,58 @@ app.post("/webhook/sms", async (c) => {
   const humanId = getHumanByNumber(to);
   console.log(`[sms] ${from} -> ${to} (human: ${humanId}): ${messageBody}`);
 
-  if (humanId) {
-    if (!isPhoneActive(humanId, to)) {
-      const twiml = new twilio.twiml.MessagingResponse();
-      twiml.message("This number is currently suspended.");
-      return c.text(twiml.toString(), 200, { "Content-Type": "text/xml" });
-    }
-    addMessage(humanId, from, to, messageBody, messageSid);
-    forwardSmsToXmtp(humanId, from, messageBody).catch(console.error);
+  const twiml = new twilio.twiml.MessagingResponse();
+
+  if (!humanId) {
+    twiml.message("[ahoy] Unknown number.");
+    return c.text(twiml.toString(), 200, { "Content-Type": "text/xml" });
   }
 
-  const twiml = new twilio.twiml.MessagingResponse();
-  twiml.message(
-    `[ahoy] Received by agent for human ${humanId?.slice(0, 8) ?? "unknown"}`,
-  );
+  if (!isPhoneActive(humanId, to)) {
+    twiml.message("This number is currently suspended.");
+    return c.text(twiml.toString(), 200, { "Content-Type": "text/xml" });
+  }
 
+  const cmd = messageBody.trim().toLowerCase();
+
+  // /help
+  if (cmd === "/help") {
+    twiml.message(
+      "ahoy SMS commands:\n" +
+      "/inbox - recent messages\n" +
+      "/status - number info\n" +
+      "/help - show this",
+    );
+    return c.text(twiml.toString(), 200, { "Content-Type": "text/xml" });
+  }
+
+  // /inbox
+  if (cmd === "/inbox") {
+    const msgs = getMessages(humanId);
+    if (msgs.length === 0) {
+      twiml.message("No messages in your inbox.");
+    } else {
+      const summary = msgs.slice(-5).map((m) => `${m.from}: ${m.body}`).join("\n");
+      twiml.message(`Last ${Math.min(5, msgs.length)} messages:\n${summary}`);
+    }
+    return c.text(twiml.toString(), 200, { "Content-Type": "text/xml" });
+  }
+
+  // /status
+  if (cmd === "/status") {
+    const nums = getNumbersByHuman(humanId);
+    const info = nums.map((n) => `${n.phoneNumber} [${n.status}]`).join("\n");
+    twiml.message(`Human: ${humanId.slice(0, 12)}...\n${info}`);
+    return c.text(twiml.toString(), 200, { "Content-Type": "text/xml" });
+  }
+
+  // Default: store message + forward to XMTP
+  addMessage(humanId, from, to, messageBody, messageSid);
+  forwardSmsToXmtp(humanId, from, messageBody).catch(console.error);
+
+  twiml.message(
+    `[ahoy] Received by agent for human ${humanId.slice(0, 8)}`,
+  );
   return c.text(twiml.toString(), 200, { "Content-Type": "text/xml" });
 });
 
