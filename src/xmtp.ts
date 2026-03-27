@@ -149,6 +149,10 @@ export async function initXmtp(): Promise<void> {
  * Forward an incoming SMS to the registered XMTP subscriber.
  * Called from the SMS webhook in index.ts.
  */
+export function getXmtpAddress(): string | null {
+  return agent?.address ?? null;
+}
+
 export async function forwardSmsToXmtp(
   humanId: string,
   from: string,

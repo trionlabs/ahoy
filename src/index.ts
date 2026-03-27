@@ -27,9 +27,13 @@ import {
   getNumberByHuman,
   setNumber,
   getHumanByNumber,
+  getNumberStatus,
   getAllMappings,
   addMessage,
   getMessages,
+  suspendNumber,
+  releaseNumber,
+  extendBilling,
 } from "./storage.js";
 import { provisionNumber, makeAICall, twilio } from "./twilio.js";
 import { initEas, attestProvision, easEnabled } from "./eas.js";
@@ -37,11 +41,13 @@ import { initEas, attestProvision, easEnabled } from "./eas.js";
 let initXmtp: () => Promise<void> = async () => {};
 let forwardSmsToXmtp: (humanId: string, from: string, body: string) => Promise<void> = async () => {};
 let registerXmtpSubscriber: (humanId: string, walletAddress: string) => void = () => {};
+let getXmtpAddress: () => string | null = () => null;
 try {
   const xmtp = await import("./xmtp.js");
   initXmtp = xmtp.initXmtp;
   forwardSmsToXmtp = xmtp.forwardSmsToXmtp;
   registerXmtpSubscriber = xmtp.registerXmtpSubscriber;
+  getXmtpAddress = xmtp.getXmtpAddress;
 } catch (e) {
   console.log("[xmtp] native bindings not available, bridge disabled");
 }
@@ -270,7 +276,14 @@ app.post("/webhook/sms", async (c) => {
   const humanId = getHumanByNumber(to);
   console.log(`[sms] ${from} -> ${to} (human: ${humanId}): ${messageBody}`);
 
+  // Check billing status
   if (humanId) {
+    const status = getNumberStatus(humanId);
+    if (status && status.status !== "active") {
+      const twiml = new twilio.twiml.MessagingResponse();
+      twiml.message("This number is currently suspended.");
+      return c.text(twiml.toString(), 200, { "Content-Type": "text/xml" });
+    }
     addMessage(humanId, from, to, messageBody, messageSid);
     forwardSmsToXmtp(humanId, from, messageBody).catch(console.error);
   }
@@ -336,6 +349,7 @@ app.get("/health", (c) => {
     status: "ok",
     mappings: getAllMappings().length,
     eas: easEnabled,
+    xmtp: getXmtpAddress(),
   });
 });
 
@@ -347,7 +361,23 @@ app.get("/mappings", (c) => {
 // --- Voice AI routes ---
 
 // POST /webhook/voice, Twilio hits this when a call connects
-app.post("/webhook/voice", (c) => {
+app.post("/webhook/voice", async (c) => {
+  const body = await c.req.parseBody();
+  const to = body["To"] as string;
+
+  // Check billing status
+  if (to) {
+    const humanId = getHumanByNumber(to);
+    if (humanId) {
+      const status = getNumberStatus(humanId);
+      if (status && status.status !== "active") {
+        const r = new twilio.twiml.VoiceResponse();
+        r.say({ voice: "Polly.Joanna" as any }, "This number is currently suspended. Goodbye.");
+        return c.text(r.toString(), 200, { "Content-Type": "text/xml" });
+      }
+    }
+  }
+
   const twiml = buildGreetingTwiml(`${BASE_URL}/webhook/voice/gather`);
   return c.text(twiml, 200, { "Content-Type": "text/xml" });
 });
@@ -478,9 +508,23 @@ app.post("/app/verify", async (c) => {
   }
 
   const humanId = payload.nullifier_hash;
-  let phoneNumber = getNumberByHuman(humanId);
+  const existing = getNumberStatus(humanId);
 
-  // Auto-provision if no number yet (skip payment for hackathon demo)
+  // Re-activate suspended number
+  if (existing && existing.status === "suspended") {
+    extendBilling(humanId, 30);
+    console.log(`[miniapp] reactivated ${humanId} -> ${existing.phoneNumber}`);
+    return c.json({
+      humanId,
+      phoneNumber: existing.phoneNumber,
+      verified: true,
+      reactivated: true,
+    });
+  }
+
+  let phoneNumber = existing?.phoneNumber ?? null;
+
+  // Auto-provision if no number yet
   if (!phoneNumber) {
     try {
       const { phoneNumber: num, sid } = await provisionNumber(BASE_URL);
@@ -552,10 +596,78 @@ app.get("/app/inbox", (c) => {
   return c.json({ messages: getMessages(humanId) });
 });
 
+// --- Status + Renewal ---
+
+// GET /status, check number status and billing
+app.get("/status", async (c) => {
+  const agent = await resolveAgent(c.req.raw);
+  if (!agent) return c.json({ error: "Could not resolve human identity" }, 401);
+  const status = getNumberStatus(agent.humanId);
+  if (!status) return c.json({ error: "No number provisioned" }, 404);
+  return c.json({
+    humanId: agent.humanId,
+    phoneNumber: status.phoneNumber,
+    status: status.status,
+    paidUntil: new Date(status.paidUntil * 1000).toISOString(),
+  });
+});
+
+// POST /renew, extend billing (x402 payment)
+app.post("/renew", async (c) => {
+  const agent = await resolveAgent(c.req.raw);
+  if (!agent) return c.json({ error: "Could not resolve human identity" }, 401);
+  const status = getNumberStatus(agent.humanId);
+  if (!status) return c.json({ error: "No number provisioned" }, 404);
+  if (status.status === "released") return c.json({ error: "Number released, provision a new one" }, 410);
+  extendBilling(agent.humanId, 30);
+  console.log(`[renew] ${agent.humanId} extended 30 days`);
+  return c.json({
+    humanId: agent.humanId,
+    phoneNumber: status.phoneNumber,
+    status: "active",
+    paidUntil: new Date((Math.floor(Date.now() / 1000) + 30 * 86400) * 1000).toISOString(),
+  });
+});
+
+// --- Billing lifecycle enforcement ---
+
+// twilioClient available from "./twilio.js" for Twilio API calls if needed
+
+function runBillingCycle() {
+  const now = Math.floor(Date.now() / 1000);
+  const sevenDays = 7 * 86400;
+  const mappings = getAllMappings();
+  let suspended = 0;
+  let released = 0;
+
+  for (const m of mappings) {
+    if (m.status === "active" && m.paidUntil < now) {
+      suspendNumber(m.humanId);
+      suspended++;
+      console.log(`[billing] suspended ${m.humanId}`);
+    } else if (m.status === "suspended" && m.paidUntil + sevenDays < now) {
+      // Grace period expired, release from Twilio
+      releaseNumber(m.humanId);
+      released++;
+      console.log(`[billing] released ${m.humanId}`);
+      // TODO: release from Twilio via API (need sid stored)
+    }
+  }
+
+  if (suspended || released) {
+    console.log(`[billing] cycle: ${suspended} suspended, ${released} released`);
+  }
+}
+
 // --- Start ---
 async function start() {
   await initEas();
   await initXmtp();
+
+  // Run billing check every hour
+  runBillingCycle();
+  setInterval(runBillingCycle, 60 * 60 * 1000);
+
   serve({ fetch: app.fetch, port: PORT }, () => {
     console.log(`ahoy listening on http://localhost:${PORT}`);
     console.log(`webhook URL: ${BASE_URL}/webhook/sms`);

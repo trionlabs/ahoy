@@ -101,7 +101,7 @@ function formatPhone(num: string): string {
 }
 
 // --- Show number screen with agent config ---
-function showNumberScreen() {
+async function showNumberScreen() {
   $("phone-number").textContent = formatPhone(phoneNumber!);
 
   // Agent config
@@ -113,7 +113,13 @@ function showNumberScreen() {
   $("cfg-xmtp-val").textContent = "0xc56d91...48e3d";
   $("cfg-api-val").textContent = window.location.origin + "/messages";
 
-  const xmtpAddr = "0xc56d916f4ac66f88fe8f08973cdba75946a48e3d";
+  // Fetch XMTP address from server
+  let xmtpAddr = "";
+  try {
+    const h = await fetch("/health").then((r) => r.json());
+    xmtpAddr = h.xmtp || "";
+  } catch { /* ignore */ }
+
   const apiBase = window.location.origin;
 
   // Tap to copy individual values
