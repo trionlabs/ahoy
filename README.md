@@ -1,6 +1,13 @@
 # ahoy
 
-Sybil-resistant phone numbers with AI-powered calls and SMS for agents. One World ID = one number, every agent shares it.
+Sybil-resistant phone numbers with AI-powered calls and SMS for agents. One World ID = up to 5 numbers, all your agents share them.
+
+```bash
+# Add ahoy skill to any agent
+npx skill github:trionlabs/ahoy
+```
+
+**ENS:** [ahoy.base.eth](https://www.base.org/name/ahoy) | **API:** [useahoy.app](https://useahoy.app) | **Skill:** [SKILL.md](./SKILL.md)
 
 > "Phone numbers present another interesting case. Agents will increasingly need phone numbers for two-factor authentication and signups. Without proof of unique human, thousands of agents could each acquire unique phone numbers, overwhelming telecommunications infrastructure. With AgentKit, a service can ensure that each unique human receives one phone number, shared across all of their agents."
 > - [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)

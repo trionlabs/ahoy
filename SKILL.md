@@ -6,6 +6,17 @@ One verified human = up to 5 phone numbers. All your agents share them.
 **ENS:** ahoy.base.eth
 **API:** https://useahoy.app
 **XMTP Bot:** check /health endpoint for current address
+**Skill:** `npx skill github:trionlabs/ahoy`
+
+## Install
+
+```bash
+# Add ahoy skill to any agent
+npx skill github:trionlabs/ahoy
+
+# Or read the skill file directly
+curl -s https://raw.githubusercontent.com/trionlabs/ahoy/main/SKILL.md
+```
 
 ## Quick Start
 
