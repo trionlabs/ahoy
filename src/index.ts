@@ -37,7 +37,7 @@ import {
   extendBillingById,
   MAX_NUMBERS,
 } from "./storage.js";
-import { provisionNumber, twilio, twilioClient } from "./twilio.js";
+import { provisionNumber, twilio, twilioClient, getTwilioBalance, canProvision } from "./twilio.js";
 import { initEas, attestProvision, easEnabled } from "./eas.js";
 // XMTP loaded dynamically - native bindings may not be available
 let initXmtp: () => Promise<void> = async () => {};
@@ -348,6 +348,11 @@ app.post("/provision", async (c) => {
   const { humanId, wallet } = agent;
   const notify = c.req.query("notify"); // "xmtp" or omit for API polling
 
+  // Twilio balance check
+  if (!(await canProvision())) {
+    return c.json({ error: "Service temporarily unavailable. Try again later." }, 503);
+  }
+
   // Quota check: up to MAX_NUMBERS per human
   const count = getActiveCount(humanId);
   if (count >= MAX_NUMBERS) {
@@ -551,6 +556,31 @@ app.get("/health", (c) => {
   });
 });
 
+// GET /admin, protected admin dashboard (requires TWILIO_AUTH_TOKEN as bearer)
+app.get("/admin", async (c) => {
+  const auth = c.req.header("authorization");
+  if (auth !== `Bearer ${process.env.TWILIO_AUTH_TOKEN}`) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const balance = await getTwilioBalance();
+  const mappings = getAllMappings();
+  const active = mappings.filter((m) => m.status === "active");
+  const suspended = mappings.filter((m) => m.status === "suspended");
+
+  return c.json({
+    twilio: {
+      balance: `$${balance.toFixed(2)}`,
+      canProvision: balance >= 2.0,
+      activeNumbers: active.length,
+      suspendedNumbers: suspended.length,
+    },
+    numbers: mappings,
+    xmtp: getXmtpAddress(),
+    eas: easEnabled,
+  });
+});
+
 // GET /mappings, debug: see all human -> number mappings
 app.get("/mappings", (c) => {
   return c.json(getAllMappings());
@@ -725,7 +755,7 @@ app.post("/app/verify", async (c) => {
   }
 
   // First-time user: auto-provision in dev mode, show pay screen in production
-  if (DEV_MODE) {
+  if (DEV_MODE && (await canProvision())) {
     try {
       const { phoneNumber: num, sid } = await provisionNumber(BASE_URL);
       setNumber(humanId, num, sid);
@@ -748,6 +778,10 @@ app.post("/app/verify", async (c) => {
 app.post("/app/provision", async (c) => {
   const { humanId } = (await c.req.json()) as { humanId: string };
   if (!humanId) return c.json({ error: "Missing humanId" }, 400);
+
+  if (!(await canProvision())) {
+    return c.json({ error: "Service temporarily unavailable. Try again later." }, 503);
+  }
 
   const count = getActiveCount(humanId);
   if (count >= MAX_NUMBERS) {

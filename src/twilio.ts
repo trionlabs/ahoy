@@ -73,4 +73,31 @@ export async function makeAICall(from: string, to: string, baseUrl: string) {
   return call;
 }
 
+// --- Balance check ---
+const MIN_BALANCE = 2.0; // minimum USD to allow provisioning
+let cachedBalance: { amount: number; checkedAt: number } | null = null;
+const CACHE_TTL = 60_000; // cache balance for 1 minute
+
+export async function getTwilioBalance(): Promise<number> {
+  if (cachedBalance && Date.now() - cachedBalance.checkedAt < CACHE_TTL) {
+    return cachedBalance.amount;
+  }
+  try {
+    const balanceData = await client.balance.fetch();
+    const balance = parseFloat(balanceData.balance ?? "0");
+    cachedBalance = { amount: balance, checkedAt: Date.now() };
+    if (balance < MIN_BALANCE) {
+      console.log(`[twilio] WARNING: low balance $${balance.toFixed(2)}`);
+    }
+    return balance;
+  } catch {
+    return cachedBalance?.amount ?? 0;
+  }
+}
+
+export async function canProvision(): Promise<boolean> {
+  const balance = await getTwilioBalance();
+  return balance >= MIN_BALANCE;
+}
+
 export { twilio, client as twilioClient };
