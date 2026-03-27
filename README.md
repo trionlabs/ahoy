@@ -120,6 +120,34 @@ Any service on World Chain can permissionlessly check: *"does this human have a 
 
 ---
 
+## Security and Billing
+
+### Encrypted Storage
+
+Phone numbers are encrypted at rest using AES-256-GCM. Each number has its own IV (initialization vector). The DB file (`ahoy.db`) is useless without `DB_ENCRYPTION_KEY`. HumanIds are stored as-is since they're already nullifier hashes (not PII).
+
+### Number Lifecycle
+
+```
+Provision -> Active (30 days included)
+                |
+         paid_until expires
+                |
+                v
+           Suspended (SMS/voice stop, number reserved)
+                |
+         30-day grace period
+                |
+                v
+           Released (number returned to Twilio, mapping cleared)
+```
+
+- **Active**: SMS, voice AI, and XMTP forwarding all work
+- **Suspended**: number is reserved but stops receiving. Agent gets "number suspended" on API calls
+- **Released**: number is gone. Human would get a new number on re-provision
+
+---
+
 ## XMTP SMS Bridge
 
 Ahoy bridges the phone network and decentralized messaging. Agents communicate via [XMTP](https://xmtp.org) - SMS is the fallback for legacy systems.
