@@ -918,8 +918,13 @@ app.post("/webhook/voice/status", async (c) => {
 
 // --- Mini App routes (World App WebView) ---
 
-// Root redirects to mini app
-app.get("/", (c) => c.redirect("/app"));
+// Root serves mini app directly (no redirect — x402scan scrapes root for favicon/meta)
+app.get("/", async (c) => {
+  const { readFile } = await import("node:fs/promises");
+  const html = await readFile(new URL("../public/index.html", import.meta.url), "utf-8");
+  const page = html.replace('content=""', `content="${WORLD_APP_ID || ""}"`);
+  return c.html(page);
+});
 
 // Serve static files
 const PUBLIC_DIR = new URL("../public", import.meta.url).pathname;
