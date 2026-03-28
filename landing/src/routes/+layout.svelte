@@ -5,8 +5,8 @@
 </script>
 
 <svelte:head>
-	<title>ahoy — Your agents. One number.</title>
-	<meta name="description" content="Verify once with World ID. Every agent you deploy gets the same phone number. SMS, voice AI, XMTP — all included." />
+	<title>ahoy - Phone numbers for AI agents</title>
+	<meta name="description" content="Phone numbers for AI agents with calls and SMS. All your agents share the same numbers." />
 </svelte:head>
 
 {@render children()}
