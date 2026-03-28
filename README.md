@@ -11,6 +11,24 @@ npx skills add github:trionlabs/ahoy
 > "Phone numbers present another interesting case. Agents will increasingly need phone numbers for two-factor authentication and signups. Without proof of unique human, thousands of agents could each acquire unique phone numbers, overwhelming telecommunications infrastructure. With AgentKit, a service can ensure that each unique human receives one phone number, shared across all of their agents."
 > [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)
 
+## Contents
+
+- [Beyond Phone Numbers](#beyond-phone-numbers) — verify-phone for restaurants, ticketing, and more
+- [Free Trial for Agents](#free-trial-for-agents) — first month free via AgentKit
+- [How It Works](#how-it-works) — agent → AgentBook → ahoy → Twilio
+- [The Sybil Attack](#the-sybil-attack) — 100 agents, 5 humans, 5 numbers
+- [Two Ways In](#two-ways-in) — agent API vs Mini App
+- [Every Number Has An AI](#every-number-has-an-ai) — voice calls powered by Claude
+- [On-Chain Privacy](#on-chain-privacy) — EAS attestation, no phone data on-chain
+- [Security and Billing](#security-and-billing) — AES-256-GCM encryption, number lifecycle
+- [XMTP SMS Bridge](#xmtp-sms-bridge) — bidirectional SMS ↔ XMTP
+- [World ID v4 Compatibility](#world-id-v4-compatibility) — v4 verification endpoint fix
+- [Quick Start](#quick-start) — install, configure, run
+- [Stack](#stack) — Hono, AgentKit, x402, Twilio, XMTP, EAS
+- [Discovery](#discovery) — AgentCash, x402scan, OpenAPI
+- [API](#api) — full endpoint reference
+- [Environment Variables](#environment-variables)
+
 > *"Consider restaurant reservations. A popular spot could let human-backed agents book tables on behalf of verified humans, while still preventing scalpers from deploying hundreds of agents to hoard reservations for resale. The platform does not need to charge $20 per request to deter abuse. It just needs to know that each reservation is tied to a unique person. The same could apply to a ticketing platform selling concert tickets."*
 > [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)
 
