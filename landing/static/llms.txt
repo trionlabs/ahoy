@@ -1,0 +1,121 @@
+# ahoy
+
+> Phone numbers for AI agents with calls, SMS, and sybil resistance via World ID.
+
+API: https://useahoy.app
+ENS: ahoy.base.eth
+Docs: https://useahoy.app/openapi.json
+Discovery: https://useahoy.app/.well-known/x402
+
+## Quick Start
+
+Two ways to get a phone number:
+
+### One-shot (no World ID, $0.99)
+
+Pay $0.99 via x402, get a temp US number for 5 minutes. Send SMS, receive SMS, make TTS calls. No identity needed.
+
+```
+POST https://useahoy.app/oneshot
+→ { id, phoneNumber, expiresIn: "5m", endpoints: { send, inbox, call, release } }
+
+POST https://useahoy.app/oneshot/:id/send   { "to": "+15551234567", "message": "Hello" }
+GET  https://useahoy.app/oneshot/:id/inbox
+POST https://useahoy.app/oneshot/:id/call    { "to": "+15551234567", "message": "Hello" }
+POST https://useahoy.app/oneshot/:id/release
+```
+
+### Persistent number (World ID required, $0.99)
+
+Pay $0.99 via x402 + sign with AgentKit (proof-of-human). Get a permanent US number with 30-day billing, AI voice, XMTP bridge. Up to 5 numbers per human.
+
+```
+POST https://useahoy.app/provision              → { phoneNumber, provisioned: true }
+POST https://useahoy.app/provision?notify=xmtp   → same + enables XMTP SMS forwarding
+GET  https://useahoy.app/number                  → { phoneNumber }
+GET  https://useahoy.app/messages                → { messages: [...] }
+GET  https://useahoy.app/status                  → { humanId, numbers, quota }
+POST https://useahoy.app/renew                   → { renewed: true }
+```
+
+## API Reference
+
+### One-shot endpoints (x402 payment only)
+
+| Method | Path | Price | Auth | Description |
+|--------|------|-------|------|-------------|
+| POST | /oneshot | $0.99 | x402 | Get a temp number for 5 min |
+| POST | /oneshot/:id/send | free | session | Send SMS from temp number |
+| GET | /oneshot/:id/inbox | free | session | Read received SMS |
+| POST | /oneshot/:id/call | free | session | Make TTS call from temp number |
+| POST | /oneshot/:id/release | free | session | Release early |
+
+### Persistent endpoints (x402 + AgentKit)
+
+| Method | Path | Price | Auth | Description |
+|--------|------|-------|------|-------------|
+| POST | /provision | $0.99 | x402 + AgentKit | Provision a number (1 free trial) |
+| POST | /renew | $3.99 | x402 + AgentKit | Extend billing 30 days |
+| GET | /verify-phone?phone=+1... | $0.01 | x402 | Check if phone is human-backed |
+
+### Free endpoints (AgentKit auth only)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /number | Get assigned phone numbers |
+| GET | /messages | Read SMS inbox (last 50) |
+| GET | /status | Number status and billing info |
+
+### Public (no auth)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /health | Health check + XMTP bot address |
+| GET | /.well-known/x402 | x402 service discovery |
+| GET | /openapi.json | OpenAPI 3.1 spec |
+
+## Payment
+
+- **Protocol:** x402 (micropayments via HTTP 402)
+- **Networks:** World Chain (eip155:480), Base (eip155:8453)
+- **Token:** USDC
+- **Pay to:** 0x1C66D49FB1e9782Aa838A2Ec9fa6F346C85096E0 (ahoy.base.eth)
+
+## Authentication
+
+**x402 endpoints** return HTTP 402 with a `payment-required` header containing payment instructions. Include an x402 payment proof header to access the resource.
+
+**AgentKit endpoints** require a World ID proof-of-human via the `X-AgentKit` header. The agent's wallet must be registered in AgentBook with a World ID. This links the agent to a unique human identity.
+
+**Free endpoints** require only the AgentKit header (no payment).
+
+## Features
+
+- **SMS:** Receive and read incoming texts via API or XMTP
+- **Voice AI:** Inbound calls answered by Claude-powered assistant, real-time conversation
+- **XMTP Bridge:** Forward SMS to XMTP DMs, send SMS via XMTP commands
+- **Sybil resistance:** 1 World ID = max 5 numbers, on-chain EAS attestation
+- **Verify any number:** Check if a phone is backed by a verified human ($0.01)
+
+## Number Lifecycle
+
+- **Active** (30 days): SMS, voice, XMTP all work
+- **Suspended** (after expiry): number reserved, stops receiving. POST /renew to reactivate
+- **Released** (7-day grace expires): number returned to pool
+
+## Discovery
+
+```bash
+npx agentcash discover https://useahoy.app
+```
+
+## Example Flow
+
+```
+1. POST /oneshot with x402 payment ($0.99 USDC on Base)
+2. Receive: { id: "abc123", phoneNumber: "+14155551234", endpoints: {...} }
+3. POST /oneshot/abc123/send { "to": "+15559876543", "message": "Verify code please" }
+4. Wait for reply...
+5. GET /oneshot/abc123/inbox → { messages: [{ from: "+15559876543", body: "Your code is 4829" }] }
+6. Number auto-releases after 5 minutes
+```
