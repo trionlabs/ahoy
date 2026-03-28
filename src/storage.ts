@@ -117,6 +117,9 @@ const stmtUpdateStatus = db.prepare(
 const stmtExtendBilling = db.prepare(
   "UPDATE numbers SET paid_until = ?, status = 'active' WHERE id = ?",
 );
+const stmtDeleteMsgsByNumber = db.prepare(
+  "DELETE FROM messages WHERE to_number = ?",
+);
 const stmtInsertMsg = db.prepare(
   "INSERT INTO messages (human_id, from_number, to_number, body, sid) VALUES (?, ?, ?, ?, ?)",
 );
@@ -258,6 +261,8 @@ export function releaseNumberById(id: number): { sid: string } | null {
   try {
     const phone = decrypt(row.phone_encrypted, row.phone_iv);
     phoneToHuman.delete(phone);
+    // Clear messages for this number
+    stmtDeleteMsgsByNumber.run(phone);
   } catch { /* ignore */ }
   stmtUpdateStatus.run("released", id);
   return { sid: row.sid };
