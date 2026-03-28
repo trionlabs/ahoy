@@ -181,6 +181,17 @@ const httpServer = new x402HTTPResourceServer(resourceServer, routes)
 // --- Hono App ---
 const app = new Hono();
 
+// --- Force HTTPS in request URL behind reverse proxy ---
+app.use(async (c, next) => {
+  const proto = c.req.header("x-forwarded-proto");
+  if (proto === "https" && c.req.url.startsWith("http://")) {
+    const url = new URL(c.req.url);
+    url.protocol = "https:";
+    Object.defineProperty(c.req.raw, "url", { value: url.toString() });
+  }
+  await next();
+});
+
 // --- Rate limiting (simple in-memory, per IP) ---
 const rateLimitMap = new Map<string, { count: number; reset: number }>();
 app.use(async (c, next) => {
