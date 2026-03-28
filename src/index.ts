@@ -182,8 +182,7 @@ const httpServer = new x402HTTPResourceServer(resourceServer, routes)
 const app = new Hono();
 
 // --- Session management for Mini App ---
-import { randomBytes, createHmac } from "node:crypto";
-const SESSION_SECRET = process.env.TWILIO_AUTH_TOKEN || randomBytes(32).toString("hex");
+import { randomBytes } from "node:crypto";
 const sessions = new Map<string, { humanId: string; createdAt: number }>();
 const SESSION_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -465,9 +464,20 @@ app.get("/verify-phone", (c) => {
   });
 });
 
+// --- Twilio webhook validation ---
+function validateTwilioWebhook(signature: string | undefined, url: string, params: Record<string, string>): boolean {
+  if (DEV_MODE) return true;
+  if (!signature || !process.env.TWILIO_AUTH_TOKEN) return false;
+  return twilio.validateRequest(process.env.TWILIO_AUTH_TOKEN, signature, url, params);
+}
+
 // POST /webhook/sms, Twilio forwards incoming SMS here
 app.post("/webhook/sms", async (c) => {
   const body = await c.req.parseBody();
+  const params = Object.fromEntries(Object.entries(body).map(([k, v]) => [k, String(v)]));
+  if (!validateTwilioWebhook(c.req.header("x-twilio-signature"), `${BASE_URL}/webhook/sms`, params)) {
+    return c.text("Forbidden", 403);
+  }
   const from = body["From"] as string;
   const to = body["To"] as string;
   const messageBody = body["Body"] as string;
@@ -643,6 +653,10 @@ app.get("/mappings", (c) => {
 // POST /webhook/voice, Twilio hits this when a call connects
 app.post("/webhook/voice", async (c) => {
   const body = await c.req.parseBody();
+  const params = Object.fromEntries(Object.entries(body).map(([k, v]) => [k, String(v)]));
+  if (!validateTwilioWebhook(c.req.header("x-twilio-signature"), `${BASE_URL}/webhook/voice`, params)) {
+    return c.text("Forbidden", 403);
+  }
   const to = body["To"] as string;
 
   // Check billing status
@@ -847,21 +861,29 @@ app.post("/app/provision", async (c) => {
   }
 });
 
-// POST /app/pay/init, create a payment reference
+// POST /app/pay/init, create a payment reference (session required)
 app.post("/app/pay/init", async (c) => {
-  const { humanId } = (await c.req.json()) as { humanId: string };
+  const { humanId, sessionToken: st } = (await c.req.json()) as { humanId: string; sessionToken: string };
+  const sessionHumanId = validateSession(st);
+  if (!sessionHumanId || sessionHumanId !== humanId) {
+    return c.json({ error: "Invalid or expired session" }, 401);
+  }
   const reference = crypto.randomUUID();
   paymentRefs.set(reference, { humanId, createdAt: Date.now() });
   return c.json({ reference, payTo: PAY_TO });
 });
 
-// POST /app/pay/confirm, verify payment, provision number
+// POST /app/pay/confirm, verify payment, provision number (session required)
 app.post("/app/pay/confirm", async (c) => {
-  const { humanId, reference } = (await c.req.json()) as {
+  const { humanId, reference, sessionToken: st } = (await c.req.json()) as {
     humanId: string;
-    payload: unknown;
     reference: string;
+    sessionToken: string;
   };
+  const sessionHumanId = validateSession(st);
+  if (!sessionHumanId || sessionHumanId !== humanId) {
+    return c.json({ error: "Invalid or expired session" }, 401);
+  }
 
   // Validate reference (expires after 10 minutes)
   const ref = paymentRefs.get(reference);

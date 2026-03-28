@@ -333,7 +333,7 @@ async function doPay(token: "wld" | "usdc") {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         humanId,
-        payload: { status: "success" },
+        sessionToken,
         reference,
       }),
     });
