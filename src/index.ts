@@ -36,6 +36,7 @@ import {
   loadXmtpSubscribers,
   saveXmtpSubscriber,
   releaseNumberById,
+  releaseNumberByHuman,
   extendBillingById,
   MAX_NUMBERS,
 } from "./storage.js";
@@ -555,6 +556,7 @@ setInterval(async () => {
   for (const [id, session] of oneshotSessions) {
     if (now - session.createdAt > ONESHOT_TTL) {
       oneshotSessions.delete(id);
+      releaseNumberByHuman(session.humanId, session.phoneNumber);
       try { await twilioClient.incomingPhoneNumbers(session.sid).remove(); } catch {}
       console.log(`[oneshot] expired ${session.phoneNumber} (${id})`);
     }
@@ -648,6 +650,7 @@ app.post("/oneshot/:id/release", async (c) => {
   const session = oneshotSessions.get(id);
   if (!session) return c.json({ error: "Session expired or invalid" }, 404);
   oneshotSessions.delete(id);
+  releaseNumberByHuman(session.humanId, session.phoneNumber);
   try { await twilioClient.incomingPhoneNumbers(session.sid).remove(); } catch {}
   console.log(`[oneshot] released ${session.phoneNumber} (${id})`);
   return c.json({ released: true, phoneNumber: session.phoneNumber });
@@ -763,9 +766,13 @@ app.get("/dashboard/events", (c) => {
       stream.writeSSE({ event: event.type, data: JSON.stringify(event.data) });
     };
     dashboardListeners.add(send);
-    // Keep alive until client disconnects
-    while (true) {
-      await stream.sleep(30000);
+    try {
+      // Keep alive until client disconnects
+      while (true) {
+        await stream.sleep(30000);
+      }
+    } finally {
+      dashboardListeners.delete(send);
     }
   });
 });
@@ -890,7 +897,7 @@ app.post("/webhook/voice/gather", async (c) => {
     console.log(`[voice] AI: "${aiResponse}"`);
   } catch (e) {
     console.error("[voice] Claude API error:", e);
-    aiResponse = "Şu anda düşünmekte zorlanıyorum. Tekrar dener misiniz?";
+    aiResponse = "I'm having trouble thinking right now. Could you try again?";
   }
 
   const twiml = buildResponseTwiml(aiResponse, `${BASE_URL}/webhook/voice/gather`);
@@ -953,6 +960,14 @@ app.get("/app", async (c) => {
 // Payment references (in-memory, short-lived)
 const paymentRefs = new Map<string, { humanId: string; createdAt: number }>();
 
+// Cleanup stale payment refs every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ref, data] of paymentRefs) {
+    if (now - data.createdAt > 10 * 60 * 1000) paymentRefs.delete(ref);
+  }
+}, 5 * 60 * 1000);
+
 // POST /app/verify, verify World ID proof, check if already provisioned
 app.post("/app/verify", async (c) => {
   const { payload, action } = (await c.req.json()) as {
@@ -963,7 +978,27 @@ app.post("/app/verify", async (c) => {
   if (!WORLD_APP_ID || DEV_MODE) {
     // Dev mode: accept the nullifier_hash from the mock payload
     const devHumanId = payload.nullifier_hash || `miniapp-${Date.now()}`;
-    return c.json({ humanId: devHumanId, phoneNumber: getNumberByHuman(devHumanId) });
+    const devSession = createSession(devHumanId);
+    const devNumbers = getNumbersByHuman(devHumanId);
+
+    // Auto-provision in dev mode
+    if (devNumbers.length === 0 && (await canProvision())) {
+      try {
+        const { phoneNumber: num, sid } = await provisionNumber(BASE_URL);
+        setNumber(devHumanId, num, sid);
+        console.log(`[miniapp] dev auto-provisioned ${devHumanId} -> ${num}`);
+      } catch (e) {
+        console.error("[miniapp] dev auto-provision failed:", e);
+      }
+    }
+
+    return c.json({
+      humanId: devHumanId,
+      sessionToken: devSession,
+      numbers: getNumbersByHuman(devHumanId),
+      verified: true,
+      needsPayment: false,
+    });
   }
 
   // Verify via World ID v4 API (v2 doesn't see v4 actions)

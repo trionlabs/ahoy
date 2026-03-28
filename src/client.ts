@@ -14,6 +14,7 @@ import {
   tokenToDecimals,
   type PayCommandInput,
 } from "@worldcoin/minikit-js";
+import QRCode from "qrcode";
 
 // IDKit standalone sets window.IDKit + window.IDKitSession
 declare global {
@@ -336,7 +337,7 @@ async function doVerifyWithIDKit(appId: string) {
     }
 
     // Show QR modal
-    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(uri)}&bgcolor=FFFFFF`;
+    qrImg.src = await QRCode.toDataURL(uri, { width: 250, margin: 2 });
     qrImg.style.display = "block";
 
     // Deep link for mobile

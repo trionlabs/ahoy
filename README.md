@@ -9,10 +9,10 @@ npx skills add github:trionlabs/ahoy
 **API:** [useahoy.app](https://useahoy.app) | **x402scan:** [ahoy](https://www.x402scan.com/server/bdb3de57-750e-42d0-b7e1-a54a5c809871) | **Skill:** [SKILL.md](./skills/ahoy/SKILL.md)
 
 > "Phone numbers present another interesting case. Agents will increasingly need phone numbers for two-factor authentication and signups. Without proof of unique human, thousands of agents could each acquire unique phone numbers, overwhelming telecommunications infrastructure. With AgentKit, a service can ensure that each unique human receives one phone number, shared across all of their agents."
-> - [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)
+> [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)
 
 > *"Consider restaurant reservations. A popular spot could let human-backed agents book tables on behalf of verified humans, while still preventing scalpers from deploying hundreds of agents to hoard reservations for resale. The platform does not need to charge $20 per request to deter abuse. It just needs to know that each reservation is tied to a unique person. The same could apply to a ticketing platform selling concert tickets."*
-> — [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)
+> [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)
 
 ---
 
@@ -77,10 +77,10 @@ Without ahoy, one person spins up 100 agents and grabs 100 phone numbers.
 With ahoy, those 100 agents collapse to the humans behind them:
 
 ```
-100 agents -> 5 unique humans -> 5 phone numbers
+100 agents -> 5 unique humans -> 5 phone numbers (1 each)
 
   Without ahoy: 100 numbers burned
-  With ahoy:    5 numbers provisioned
+  With ahoy:      5 numbers provisioned
 ```
 
 ---

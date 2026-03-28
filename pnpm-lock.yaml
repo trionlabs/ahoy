@@ -50,6 +50,9 @@ importers:
       hono:
         specifier: ^4.0.0
         version: 4.12.9
+      qrcode:
+        specifier: ^1.5.4
+        version: 1.5.4
       twilio:
         specifier: ^5.0.0
         version: 5.13.1
@@ -63,6 +66,9 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.15
+      '@types/qrcode':
+        specifier: ^1.5.6
+        version: 1.5.6
       esbuild:
         specifier: ^0.27.4
         version: 0.27.4
@@ -526,6 +532,9 @@ packages:
 
   '@types/node@22.7.5':
     resolution: {integrity: sha512-jML7s2NAzMWc//QSJ1a3prpk78cOPchGvXJsC3C6R6PSMoooztvRVQEz89gmBTBY1SPMaqo5teB4uNHPdetShQ==}
+
+  '@types/qrcode@1.5.6':
+    resolution: {integrity: sha512-te7NQcV2BOvdj2b1hCAHzAoMNuj65kNBMz0KBaxM6c3VGBOhU0dURQKOtH8CFNI/dsKkwlv32p26qYQTWoB5bw==}
 
   '@worldcoin/agentkit@0.1.5':
     resolution: {integrity: sha512-Kde4xxSsjEYTUws+eSx594nlFMsj76fGGjcDw3UQ8MohWgb7kiFgeL/fH4EbmV9OdaMoKOnJDgcZzZGpH9BE7g==}
@@ -1632,6 +1641,10 @@ snapshots:
   '@types/node@22.7.5':
     dependencies:
       undici-types: 6.19.8
+
+  '@types/qrcode@1.5.6':
+    dependencies:
+      '@types/node': 22.19.15
 
   '@worldcoin/agentkit@0.1.5(ethers@6.16.0)(typescript@5.9.3)':
     dependencies:
