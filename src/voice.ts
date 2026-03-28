@@ -27,8 +27,8 @@ const geminiInteractions = new Map<string, string>();
 const claudeConversations = new Map<string, Anthropic.MessageParam[]>();
 
 // Twilio STT language and TTS voice, configurable via env
-const STT_LANGUAGE = (process.env.VOICE_LANGUAGE || "tr-TR") as any;
-const TTS_VOICE = process.env.VOICE_TTS || "Polly.Filiz";
+const STT_LANGUAGE = (process.env.VOICE_LANGUAGE || "en-US") as any;
+const TTS_VOICE = process.env.VOICE_TTS || "Polly.Joanna";
 
 const SYSTEM_PROMPT = `You are a friendly AI phone assistant called Ahoy.
 You are having a real-time voice conversation over the phone.

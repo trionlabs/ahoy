@@ -302,6 +302,13 @@ export function addMessage(
 }
 
 export function getMessages(humanId: string): SmsMessage[] {
+  // Get active phone numbers for this human to filter stale messages
+  const activeNumbers = new Set(
+    getNumbersByHuman(humanId)
+      .filter((n) => n.status !== "released")
+      .map((n) => n.phoneNumber),
+  );
+
   const rows = stmtGetMsgs.all(humanId) as Array<{
     from_number: string;
     to_number: string;
@@ -309,13 +316,15 @@ export function getMessages(humanId: string): SmsMessage[] {
     sid: string;
     received_at: number;
   }>;
-  return rows.map((r) => ({
-    from: r.from_number,
-    to: r.to_number,
-    body: r.body,
-    sid: r.sid || "",
-    receivedAt: new Date(r.received_at * 1000),
-  }));
+  return rows
+    .filter((r) => activeNumbers.has(r.to_number))
+    .map((r) => ({
+      from: r.from_number,
+      to: r.to_number,
+      body: r.body,
+      sid: r.sid || "",
+      receivedAt: new Date(r.received_at * 1000),
+    }));
 }
 
 // --- AgentKit persistent storage ---

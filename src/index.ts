@@ -879,7 +879,7 @@ app.post("/webhook/voice/gather", async (c) => {
 
   if (!speechResult) {
     const r = new twilio.twiml.VoiceResponse();
-    r.say({ voice: (process.env.VOICE_TTS || "Polly.Filiz") as any }, "Anlayamadım, tekrar söyler misiniz?");
+    r.say({ voice: (process.env.VOICE_TTS || "Polly.Joanna") as any }, "I didn't catch that. Could you say that again?");
     r.redirect(`${BASE_URL}/webhook/voice`);
     return c.text(r.toString(), 200, { "Content-Type": "text/xml" });
   }
