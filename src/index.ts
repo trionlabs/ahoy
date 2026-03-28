@@ -214,9 +214,9 @@ app.get("/.well-known/x402", (c) => {
   return c.json({
     version: 1,
     resources: [
-      `${BASE_URL}/provision`,
-      `${BASE_URL}/verify-phone`,
-      `${BASE_URL}/renew`,
+      "POST /provision",
+      "GET /verify-phone",
+      "POST /renew",
     ],
   });
 });
@@ -228,6 +228,7 @@ app.get("/openapi.json", (c) => {
       title: "ahoy",
       description: "Sybil-resistant phone numbers with AI-powered calls and SMS for agents. WARNING: This is a proof of concept. Service may be unstable, numbers may be released without notice. Use at your own risk.",
       version: "0.1.0-poc",
+      "x-guidance": "ahoy provides sybil-resistant phone numbers for AI agents. To get started: 1) Call POST /provision with x402 payment (USDC on World Chain or Base) and AgentKit proof-of-human. You get a real US phone number with SMS and AI-powered voice. 2) Read incoming SMS via GET /messages (free, auth only). 3) To receive SMS via XMTP instead of polling, call POST /provision?notify=xmtp. 4) Call or text the provisioned number - voice calls are answered by Claude AI, SMS stored in inbox. 5) Check billing with GET /status, renew with POST /renew. Each verified human can have up to 5 numbers.",
     },
     servers: [{ url: BASE_URL }],
     paths: {
