@@ -164,6 +164,40 @@ const routes = {
       }),
     },
   },
+  "GET /messages": {
+    accepts: [
+      { scheme: "exact" as const, price: "$0.01", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.01", network: BASE_CHAIN, payTo: PAY_TO },
+    ],
+    extensions: {
+      ...declareAgentkitExtension({
+        statement: "Read your SMS inbox",
+        mode: { type: "free-trial" as const, uses: 5 },
+      }),
+      ...declareDiscoveryExtension({
+        output: {
+          example: { messages: [{ from: "+15551234567", body: "Hello", receivedAt: "2026-03-27T00:00:00Z" }] },
+        },
+      }),
+    },
+  },
+  "GET /status": {
+    accepts: [
+      { scheme: "exact" as const, price: "$0.01", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.01", network: BASE_CHAIN, payTo: PAY_TO },
+    ],
+    extensions: {
+      ...declareAgentkitExtension({
+        statement: "Check your number status and billing",
+        mode: { type: "free-trial" as const, uses: 5 },
+      }),
+      ...declareDiscoveryExtension({
+        output: {
+          example: { humanId: "0x1d73...", numbers: [], quota: "0/5" },
+        },
+      }),
+    },
+  },
   "POST /renew": {
     accepts: [
       { scheme: "exact" as const, price: "$0.10", network: WORLD_CHAIN, payTo: PAY_TO },
@@ -222,7 +256,9 @@ app.get("/.well-known/x402", (c) => {
     resources: [
       `${BASE_URL}/provision`,
       `${BASE_URL}/number`,
+      `${BASE_URL}/messages`,
       `${BASE_URL}/verify-phone`,
+      `${BASE_URL}/status`,
       `${BASE_URL}/renew`,
     ],
   });
@@ -278,6 +314,17 @@ app.get("/openapi.json", (c) => {
           "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "$0.01" },
           responses: {
             "200": { description: "Messages", content: { "application/json": { schema: { type: "object", properties: { messages: { type: "array" } } } } } },
+            "402": { description: "Payment required" },
+          },
+        },
+      },
+      "/status": {
+        get: {
+          summary: "Check number status and billing",
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "$0.01" },
+          responses: {
+            "200": { description: "Status", content: { "application/json": { schema: { type: "object", properties: { humanId: { type: "string" }, numbers: { type: "array" }, quota: { type: "string" } } } } } },
+            "402": { description: "Payment required" },
           },
         },
       },
