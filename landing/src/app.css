@@ -26,7 +26,11 @@
   --color-frame: #111111;
 }
 
-*, *::before, *::after {
+/* Block transitions until page is loaded to prevent theme flash */
+html:not(.loaded) *, html:not(.loaded) *::before, html:not(.loaded) *::after {
+  transition: none !important;
+}
+.loaded *, .loaded *::before, .loaded *::after {
   transition-property: background-color, border-color, color, fill, stroke, box-shadow;
   transition-duration: 0.25s;
   transition-timing-function: ease;

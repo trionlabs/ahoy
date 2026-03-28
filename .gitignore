@@ -9,3 +9,5 @@ ahoy.db*
 badwords.json
 .qwen
 .agents
+launch/
+public/landing/
