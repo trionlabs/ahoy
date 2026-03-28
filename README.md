@@ -299,12 +299,13 @@ Open `http://localhost:4021/app` in a browser (dev mode) or in World App (produc
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `POST` | `/provision` | x402 + AgentKit | Provision a number |
-| `GET` | `/number` | x402 + AgentKit | Get assigned number |
-| `GET` | `/messages` | x402 + AgentKit | Read SMS inbox |
-| `GET` | `/verify-phone?phone=+1..` | x402 | Check if phone is backed by verified human |
-| `POST` | `/renew` | x402 + AgentKit | Extend billing 30 days |
-| `GET` | `/status` | x402 + AgentKit | Check number status and billing |
+| `POST` | `/provision` | x402 ($0.10) | Provision a number (returns existing if already provisioned) |
+| `POST` | `/provision?notify=xmtp` | x402 ($0.10) | Same + register wallet for XMTP forwarding |
+| `GET` | `/verify-phone?phone=+1..` | x402 ($0.01) | Check if phone is backed by verified human |
+| `POST` | `/renew` | x402 ($0.10) | Extend billing 30 days |
+| `GET` | `/number` | AgentKit (free) | Get assigned numbers |
+| `GET` | `/messages` | AgentKit (free) | Read SMS inbox |
+| `GET` | `/status` | AgentKit (free) | Check number status and billing |
 | `POST` | `/webhook/sms` | - | Twilio SMS webhook |
 | `POST` | `/webhook/voice` | - | Twilio voice webhook (AI conversation) |
 | `GET` | `/app` | - | Mini App (World App) |

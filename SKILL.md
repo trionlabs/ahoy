@@ -23,23 +23,31 @@ curl -s https://raw.githubusercontent.com/trionlabs/ahoy/main/SKILL.md
 ```bash
 # 1. Provision a number (x402 payment on World Chain or Base)
 POST https://useahoy.app/provision
-# Returns: { phoneNumber: "+14155551234", provisioned: true }
+# Returns: { numbers: [...], provisioned: true }
+# If you already have numbers, returns them without provisioning a new one.
 
-# 2. Check your numbers
+# 2. Enable XMTP forwarding (re-call provision with ?notify=xmtp)
+POST https://useahoy.app/provision?notify=xmtp
+# Returns existing numbers + registers your wallet for XMTP SMS forwarding.
+# No new number provisioned. Secure - uses AgentKit wallet verification.
+
+# 3. Check your numbers (free, AgentKit auth only)
 GET https://useahoy.app/number
 
-# 3. Read SMS inbox
+# 4. Read SMS inbox (free, AgentKit auth only)
 GET https://useahoy.app/messages
 
-# 4. Verify a phone number is backed by a real human
-GET https://useahoy.app/verify-phone?phone=+14155551234
-# Returns: { verified: true, humanId: "0x1d73..." }
+# 5. Check billing status (free, AgentKit auth only)
+GET https://useahoy.app/status
 
-# 5. Renew for 30 more days
+# 6. Verify a phone number is backed by a real human (x402 paid)
+GET https://useahoy.app/verify-phone?phone=+14155551234
+
+# 7. Renew for 30 more days (x402 paid)
 POST https://useahoy.app/renew
 ```
 
-All endpoints require x402 payment (USDC on World Chain or Base) and AgentKit proof-of-human.
+Paid endpoints use x402 (USDC on World Chain or Base). Free endpoints require AgentKit auth only.
 Verified humans get 1 free provision via AgentKit free-trial.
 
 WARNING: This is a proof of concept. Service may be unstable. Use at your own risk.
@@ -48,10 +56,12 @@ WARNING: This is a proof of concept. Service may be unstable. Use at your own ri
 
 - **Network:** World Chain (eip155:480) or Base (eip155:8453)
 - **Token:** USDC
-- **Pricing:**
-  - Provision: $0.10
-  - Number lookup: $0.01
+- **Paid (x402):**
+  - Provision: $0.10 (1 free for verified humans)
+  - Verify phone: $0.01
   - Renew (30 days): $0.10
+- **Free (AgentKit auth only):**
+  - Number lookup, inbox, status
 - **Pay to:** ahoy.base.eth (`0x1C66D49FB1e9782Aa838A2Ec9fa6F346C85096E0`)
 
 ## SMS Commands
@@ -93,15 +103,16 @@ All incoming SMS will be forwarded to your XMTP address as DMs.
 
 | Method | Path | Price | Description |
 |---|---|---|---|
-| `POST` | `/provision` | $0.10 | Provision a phone number |
-| `POST` | `/provision?notify=xmtp` | $0.10 | Provision + auto-register for XMTP forwarding |
-| `GET` | `/number` | $0.01 | Get assigned numbers |
-| `GET` | `/messages` | $0.01 | Read SMS inbox |
+| `POST` | `/provision` | $0.10 | Provision a phone number (returns existing if already provisioned) |
+| `POST` | `/provision?notify=xmtp` | $0.10 | Same + auto-register wallet for XMTP forwarding |
 | `GET` | `/verify-phone?phone=+1...` | $0.01 | Check if a phone is backed by a verified human |
 | `POST` | `/renew` | $0.10 | Extend billing 30 days |
-| `GET` | `/status` | $0.01 | Check number status + billing |
+| `GET` | `/number` | free | Get assigned numbers (AgentKit auth) |
+| `GET` | `/messages` | free | Read SMS inbox (AgentKit auth) |
+| `GET` | `/status` | free | Check number status + billing (AgentKit auth) |
 | `GET` | `/health` | free | Health check + XMTP bot address |
 | `GET` | `/.well-known/x402` | free | x402 service discovery |
+| `GET` | `/openapi.json` | free | OpenAPI spec |
 | `GET` | `/openapi.json` | free | OpenAPI spec |
 
 ## Discovery
