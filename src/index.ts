@@ -255,6 +255,8 @@ setInterval(() => {
 app.get("/.well-known/x402", (c) => {
   return c.json({
     version: 1,
+    name: "ahoy",
+    description: "Sybil-resistant phone numbers with AI-powered calls and SMS for agents. One verified human = up to 5 numbers.",
     resources: [
       "POST /provision",
       "GET /verify-phone",
