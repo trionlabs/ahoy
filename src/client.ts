@@ -87,7 +87,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setBtnLoading("btn-refresh", true);
     loadInbox().then(() => setBtnLoading("btn-refresh", false));
   });
-  $("phone-card").addEventListener("click", copyNumber);
 });
 
 // --- Copy to clipboard with toast ---
@@ -99,9 +98,6 @@ function copyToClipboard(text: string) {
   });
 }
 
-function copyNumber() {
-  if (phoneNumber) copyToClipboard(phoneNumber);
-}
 
 // --- Format phone number: +14783751706 -> +1 (478) 375-1706 ---
 function formatPhone(num: string): string {
@@ -408,7 +404,10 @@ async function doProvisionNew() {
     });
     const data = await res.json();
     if (data.error) {
-      alert(data.error);
+      const toast = $("copied-toast");
+      toast.textContent = data.error;
+      toast.classList.add("show");
+      setTimeout(() => { toast.classList.remove("show"); toast.textContent = "Copied!"; }, 2500);
     } else if (data.numbers) {
       allNumbers = data.numbers;
       phoneNumber = allNumbers[0]?.phoneNumber ?? null;
@@ -444,6 +443,3 @@ async function releasePhone(phone: string) {
     // ignore
   }
 }
-
-// Legacy compat
-function doRelease() { if (phoneNumber) releasePhone(phoneNumber); }

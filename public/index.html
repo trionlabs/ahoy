@@ -150,9 +150,12 @@
       padding: 0.5rem 0.9rem; border-radius: 1.125rem;
       font-size: 0.84rem; font-weight: 400; line-height: 1.4;
     }
-    .bubble-call { background: var(--accent-green-bg); color: var(--accent-green); }
-    .bubble-sms { background: var(--accent-blue-bg); color: var(--accent-blue); }
-    .bubble-xmtp { background: var(--accent-purple-bg); color: var(--accent-purple); }
+    .bubble-call { background: var(--accent-green-bg); color: #1B5E20; }
+    .bubble-sms { background: var(--accent-blue-bg); color: #0D47A1; }
+    .bubble-xmtp { background: var(--accent-purple-bg); color: #4A148C; }
+    .dark .bubble-call { color: #A5D6A7; }
+    .dark .bubble-sms { color: #90CAF9; }
+    .dark .bubble-xmtp { color: #CE93D8; }
     .bubble svg { width: 14px; height: 14px; flex-shrink: 0; }
 
     /* Buttons */
@@ -171,7 +174,7 @@
       border: 1px solid var(--stroke);
     }
     .btn-outline:active { border-color: var(--ink-muted); }
-    .btn-sm { width: auto; padding: 0.45rem 1rem; font-size: 0.8rem; border-radius: 9999px; }
+    .btn-sm { width: auto; padding: 0.45rem 1rem; font-size: 0.8rem; border-radius: 9999px; min-height: 44px; }
     .btn-loading .btn-text { visibility: hidden; }
     .btn-loading::after {
       content: ''; position: absolute; top: 50%; left: 50%;
@@ -202,7 +205,7 @@
     .phone-badge.expires { background: var(--accent-blue-bg); color: var(--accent-blue); }
     .phone-hint { font-size: 0.72rem; color: var(--ink-muted); margin-top: 0.5rem; }
     .copied-toast {
-      position: absolute; bottom: -1.8rem; left: 50%; transform: translateX(-50%);
+      position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
       background: var(--ink); color: var(--bone); padding: 0.3rem 0.8rem;
       border-radius: 9999px; font-size: 0.75rem;
       opacity: 0; transition: opacity 0.2s; pointer-events: none;
@@ -212,7 +215,7 @@
     /* Sections */
     .section-toggle {
       width: 100%; display: flex; justify-content: space-between; align-items: center;
-      cursor: pointer; padding: 0.6rem 0;
+      cursor: pointer; padding: 0.6rem 0; min-height: 44px;
     }
     .section-toggle .arrow { color: var(--ink-muted); font-size: 0.85rem; transition: transform 0.2s; }
     .section-toggle.open .arrow { transform: rotate(90deg); }
@@ -285,22 +288,25 @@
       width: 100%; display: flex; flex-direction: column; gap: 0.5rem;
     }
     .btn-release-inline {
-      width: 100%; padding: 0.5rem;
+      width: 100%; padding: 0.5rem; min-height: 44px;
       background: transparent; color: var(--ink-muted);
       border: 1px solid var(--stroke); border-radius: 9999px;
       font-size: 0.78rem; cursor: pointer; transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center;
     }
     .btn-release-inline:active { color: var(--accent-red); border-color: var(--accent-red); }
     .release-confirm {
       display: flex; align-items: center; gap: 0.5rem; justify-content: center;
     }
     .btn-confirm-yes {
-      padding: 0.4rem 0.9rem; background: var(--accent-red-bg); color: var(--accent-red);
+      padding: 0.4rem 0.9rem; min-height: 44px; background: var(--accent-red-bg); color: var(--accent-red);
       border: 1px solid transparent; border-radius: 9999px; font-size: 0.78rem; cursor: pointer;
+      display: inline-flex; align-items: center;
     }
     .btn-confirm-no {
-      padding: 0.4rem 0.9rem; background: transparent; color: var(--ink-muted);
+      padding: 0.4rem 0.9rem; min-height: 44px; background: transparent; color: var(--ink-muted);
       border: 1px solid var(--stroke); border-radius: 9999px; font-size: 0.78rem; cursor: pointer;
+      display: inline-flex; align-items: center;
     }
 
     @keyframes revealUp {
@@ -308,6 +314,11 @@
       to { opacity: 1; transform: translateY(0); }
     }
     .reveal { animation: revealUp 0.4s ease forwards; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { animation: none; opacity: 1; transform: none; }
+      .btn, .phone-card, .pay-option { transition: none; }
+    }
   </style>
 </head>
 <body>
@@ -392,7 +403,7 @@
 
   <!-- Screen 3: Inbox + Numbers + Agent Setup -->
   <div id="screen-number" class="screen">
-    <div id="copied-toast" class="copied-toast" style="position:fixed;bottom:2rem;left:50%;transform:translateX(-50%)">Copied!</div>
+    <div id="copied-toast" class="copied-toast">Copied!</div>
 
     <div class="inbox-header" style="width:100%">
       <div class="logo-row">
