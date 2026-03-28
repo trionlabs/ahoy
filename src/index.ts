@@ -742,20 +742,21 @@ app.post("/webhook/voice/status", async (c) => {
 app.get("/", (c) => c.redirect("/app"));
 
 // Serve static files
-app.use("/app.js", serveStatic({ root: "./public" }));
-app.use("/dashboard.html", serveStatic({ root: "./public" }));
+const PUBLIC_DIR = new URL("../public", import.meta.url).pathname;
+app.use("/app.js", serveStatic({ root: PUBLIC_DIR }));
+app.use("/dashboard.html", serveStatic({ root: PUBLIC_DIR }));
 
 // Dashboard entry point
 app.get("/dashboard", async (c) => {
   const { readFile } = await import("node:fs/promises");
-  const html = await readFile("public/dashboard.html", "utf-8");
+  const html = await readFile(new URL("../public/dashboard.html", import.meta.url), "utf-8");
   return c.html(html);
 });
 
 // Mini App entry point
 app.get("/app", async (c) => {
   const { readFile } = await import("node:fs/promises");
-  const html = await readFile("public/index.html", "utf-8");
+  const html = await readFile(new URL("../public/index.html", import.meta.url), "utf-8");
   const page = html.replace(
     'content=""',
     `content="${WORLD_APP_ID || ""}"`,
