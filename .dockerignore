@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+*.log
+.claude
+.git
+xmtp-*.db3*
+ahoy.db*
+public/app.js
