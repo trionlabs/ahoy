@@ -389,20 +389,20 @@ app.post("/provision", async (c) => {
   const { humanId, wallet } = agent;
   const notify = c.req.query("notify"); // "xmtp" or omit for API polling
 
+  // If agent already has numbers, register for XMTP and return existing
+  const existing = getNumbersByHuman(humanId);
+  if (existing.length > 0) {
+    if (notify === "xmtp" && wallet) registerXmtpSubscriber(humanId, wallet);
+    return c.json({
+      numbers: existing,
+      provisioned: false,
+      notify: notify || "api",
+    });
+  }
+
   // Twilio balance check
   if (!(await canProvision())) {
     return c.json({ error: "Service temporarily unavailable. Try again later." }, 503);
-  }
-
-  // Quota check: up to MAX_NUMBERS per human
-  const count = getActiveCount(humanId);
-  if (count >= MAX_NUMBERS) {
-    if (notify === "xmtp" && wallet) registerXmtpSubscriber(humanId, wallet);
-    return c.json({
-      error: `Quota reached: ${count}/${MAX_NUMBERS} numbers`,
-      numbers: getNumbersByHuman(humanId),
-      notify: notify || "api",
-    }, 409);
   }
 
   // Prevent concurrent provisioning for the same human
