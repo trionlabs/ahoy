@@ -122,7 +122,7 @@ async function showNumberScreen() {
       const expiry = n.paidUntil ? new Date(n.paidUntil * 1000).toLocaleDateString() : "";
       const badge = n.status === "active"
         ? `<span class="phone-badge">Active</span>`
-        : `<span class="phone-badge" style="background:#2a1a1a;color:#ff6b6b">${n.status}</span>`;
+        : `<span class="phone-badge" style="background:var(--accent-red-bg);color:var(--accent-red)">${n.status}</span>`;
       return `<div class="number-item reveal" data-phone="${escapeHtml(n.phoneNumber)}">
         <div class="phone-card" style="cursor:pointer">
           <div class="phone-number">${formatPhone(n.phoneNumber)}</div>
@@ -131,7 +131,7 @@ async function showNumberScreen() {
         </div>
         <button class="btn-release-inline">Release</button>
         <div class="release-confirm" style="display:none">
-          <span style="font-size:0.78rem;color:#ff6b6b">Are you sure?</span>
+          <span style="font-size:0.78rem;color:var(--accent-red)">Are you sure?</span>
           <button class="btn-confirm-yes">Yes, release</button>
           <button class="btn-confirm-no">Cancel</button>
         </div>
