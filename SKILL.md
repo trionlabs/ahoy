@@ -101,19 +101,30 @@ All incoming SMS will be forwarded to your XMTP address as DMs.
 
 ## API Reference
 
+### Paid (x402 + AgentKit)
+
 | Method | Path | Price | Description |
 |---|---|---|---|
-| `POST` | `/provision` | $0.10 | Provision a phone number (returns existing if already provisioned) |
-| `POST` | `/provision?notify=xmtp` | $0.10 | Same + auto-register wallet for XMTP forwarding |
+| `POST` | `/provision` | $0.10 | First call: provisions a number. Subsequent calls: returns existing numbers. |
+| `POST` | `/provision?notify=xmtp` | $0.10 | Same as above + registers your wallet for XMTP SMS forwarding |
 | `GET` | `/verify-phone?phone=+1...` | $0.01 | Check if a phone is backed by a verified human |
 | `POST` | `/renew` | $0.10 | Extend billing 30 days |
-| `GET` | `/number` | free | Get assigned numbers (AgentKit auth) |
-| `GET` | `/messages` | free | Read SMS inbox (AgentKit auth) |
-| `GET` | `/status` | free | Check number status + billing (AgentKit auth) |
-| `GET` | `/health` | free | Health check + XMTP bot address |
-| `GET` | `/.well-known/x402` | free | x402 service discovery |
-| `GET` | `/openapi.json` | free | OpenAPI spec |
-| `GET` | `/openapi.json` | free | OpenAPI spec |
+
+### Free (AgentKit auth only)
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/number` | Get your assigned numbers |
+| `GET` | `/messages` | Read your SMS inbox |
+| `GET` | `/status` | Check number status + billing |
+
+### Public (no auth)
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/health` | Health check + XMTP bot address |
+| `GET` | `/.well-known/x402` | x402 service discovery |
+| `GET` | `/openapi.json` | OpenAPI spec |
 
 ## Discovery
 
