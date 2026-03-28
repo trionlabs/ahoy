@@ -921,21 +921,19 @@ app.post("/app/pay/confirm", async (c) => {
   paymentRefs.delete(reference);
 
   // Core invariant check
-  const existing = getNumberByHuman(humanId);
-  if (existing) {
-    return c.json({ phoneNumber: existing, provisioned: false });
+  const existing = getNumbersByHuman(humanId);
+  if (existing.length > 0) {
+    return c.json({ numbers: existing, provisioned: false });
   }
 
   // Provision
   try {
     const { phoneNumber, sid } = await provisionNumber(BASE_URL);
     setNumber(humanId, phoneNumber, sid);
-
-    // EAS attestation
     await attestProvision(humanId);
 
     console.log(`[miniapp] ${humanId} -> ${phoneNumber}`);
-    return c.json({ phoneNumber, provisioned: true });
+    return c.json({ numbers: getNumbersByHuman(humanId), provisioned: true });
   } catch (e) {
     console.error(`[miniapp] provision failed for ${humanId}:`, e);
     return c.json({ error: "Failed to provision number. Try again." }, 500);

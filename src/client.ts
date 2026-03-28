@@ -342,8 +342,9 @@ async function doPay(token: "wld" | "usdc") {
     });
 
     const data = await confirmRes.json();
-    if (data.phoneNumber) {
-      phoneNumber = data.phoneNumber;
+    if (data.numbers && data.numbers.length > 0) {
+      allNumbers = data.numbers;
+      phoneNumber = allNumbers[0].phoneNumber;
       showNumberScreen();
     } else {
       setPayStatus(data.error || "Provisioning failed. Try again.");
