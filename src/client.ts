@@ -286,6 +286,7 @@ async function doVerify() {
 // --- Pay ---
 async function doPay(token: "wld" | "usdc") {
   setPayStatus("Processing...");
+  let txId = "";
 
   try {
     const initRes = await fetch("/app/pay/init", {
@@ -324,6 +325,7 @@ async function doPay(token: "wld" | "usdc") {
         setPayStatus("Payment cancelled.");
         return;
       }
+      txId = (finalPayload as any).transaction_id || "";
     }
 
     setPayStatus("Provisioning your number...");
@@ -335,6 +337,7 @@ async function doPay(token: "wld" | "usdc") {
         humanId,
         sessionToken,
         reference,
+        transactionId: txId,
       }),
     });
 

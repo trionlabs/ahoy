@@ -893,14 +893,20 @@ app.post("/app/pay/init", async (c) => {
 
 // POST /app/pay/confirm, verify payment, provision number (session required)
 app.post("/app/pay/confirm", async (c) => {
-  const { humanId, reference, sessionToken: st } = (await c.req.json()) as {
+  const { humanId, reference, sessionToken: st, transactionId } = (await c.req.json()) as {
     humanId: string;
     reference: string;
     sessionToken: string;
+    transactionId?: string;
   };
   const sessionHumanId = validateSession(st);
   if (!sessionHumanId || sessionHumanId !== humanId) {
     return c.json({ error: "Invalid or expired session" }, 401);
+  }
+
+  // Require transaction_id from MiniKit pay (skip in DEV_MODE)
+  if (!DEV_MODE && !transactionId) {
+    return c.json({ error: "Missing transactionId from payment" }, 400);
   }
 
   // Validate reference (expires after 10 minutes)
