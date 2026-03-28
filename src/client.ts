@@ -75,11 +75,17 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("meta[name=app-id]") as HTMLMetaElement
   )?.content;
 
+  let miniKitReady = false;
   if (appId) {
-    MiniKit.install(appId);
+    try {
+      MiniKit.install(appId);
+      miniKitReady = MiniKit.isInstalled();
+    } catch {
+      // Not in World App — will use IDKit
+    }
   }
 
-  if (MiniKit.isInstalled()) {
+  if (miniKitReady) {
     // In World App — use MiniKit
   } else if (appId && window.IDKit) {
     // Regular browser with app_id — use IDKit for World ID verification
