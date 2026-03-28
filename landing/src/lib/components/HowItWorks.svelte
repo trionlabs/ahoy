@@ -14,7 +14,7 @@
 
 	const steps = [
 		{ num: '01', title: 'Verify', desc: 'Sign in with World ID. One tap. No documents, no wait.' },
-		{ num: '02', title: 'Pay', desc: '0.5 WLD or $0.10 USDC. One-time. 30 days included.' },
+		{ num: '02', title: 'Pay', desc: '$0.99 USDC. One-time. 30 days included.' },
 		{ num: '03', title: 'Done', desc: 'Number is live. SMS, voice AI, XMTP — instantly.' }
 	];
 </script>

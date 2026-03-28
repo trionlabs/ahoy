@@ -73,7 +73,7 @@
 					</svg>
 				</a>
 				<p class="text-[11px] sm:text-[12px] text-ink-muted font-body font-400">
-					$0.10 &middot; 30 days &middot; no subscription
+					$0.99 &middot; 30 days &middot; no subscription
 				</p>
 			</div>
 		</div>
