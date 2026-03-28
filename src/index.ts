@@ -915,21 +915,22 @@ app.post("/webhook/voice/status", async (c) => {
 
 // --- Mini App routes (World App WebView) ---
 
-// Root serves mini app directly (no redirect — x402scan scrapes root for favicon/meta)
+// Root serves landing page
 app.get("/", async (c) => {
   const { readFile } = await import("node:fs/promises");
-  const html = await readFile(new URL("../public/index.html", import.meta.url), "utf-8");
-  const page = html.replace('content=""', `content="${WORLD_APP_ID || ""}"`);
-  return c.html(page);
+  const html = await readFile(new URL("../public/landing/index.html", import.meta.url), "utf-8");
+  return c.html(html);
 });
 
 // Serve static files
 const PUBLIC_DIR = new URL("../public", import.meta.url).pathname;
+const LANDING_DIR = new URL("../public/landing", import.meta.url).pathname;
 app.use("/app.js", serveStatic({ root: PUBLIC_DIR }));
 app.use("/favicon.png", serveStatic({ root: PUBLIC_DIR }));
 app.use("/favicon.ico", serveStatic({ root: PUBLIC_DIR }));
 app.use("/favicon.jpg", serveStatic({ root: PUBLIC_DIR }));
 app.use("/dashboard.html", serveStatic({ root: PUBLIC_DIR }));
+app.use("/_app/*", serveStatic({ root: LANDING_DIR }));
 
 // Dashboard entry point
 app.get("/dashboard", async (c) => {
