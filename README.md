@@ -286,11 +286,31 @@ Open `http://localhost:4021/app` in a browser (dev mode) or in World App (produc
 | Proof of human | [World AgentKit](https://docs.world.org/agents/agent-kit/integrate) |
 | Payment (agents) | [x402](https://github.com/coinbase/x402) (USDC on World Chain) |
 | Payment (humans) | [World MiniKit](https://docs.world.org/mini-apps) (WLD / USDC) |
-| Agent discovery | [x402 Bazaar](https://docs.cdp.coinbase.com/x402/bazaar) |
+| Agent discovery | [x402 Bazaar](https://docs.cdp.coinbase.com/x402/bazaar), [AgentCash](https://agentcash.dev), [x402scan](https://www.x402scan.com) |
 | Phone numbers | [Twilio](https://www.twilio.com) (SMS + Voice) |
 | Voice AI | [Claude](https://anthropic.com) (Anthropic API) |
 | Decentralized messaging | [XMTP](https://xmtp.org) (SMS <-> XMTP bridge) |
 | On-chain attestation | [EAS](https://docs.attest.org) on World Chain |
+
+---
+
+## Discovery
+
+ahoy is discoverable by AI agents via multiple channels:
+
+```bash
+# AgentCash (discover endpoints, pricing, and schemas)
+npx agentcash discover https://useahoy.app
+
+# x402scan (public registry of x402-enabled services)
+# https://www.x402scan.com
+
+# Standard x402 discovery
+GET https://useahoy.app/.well-known/x402
+GET https://useahoy.app/openapi.json
+```
+
+Agents using [AgentCash](https://agentcash.dev) can call ahoy endpoints directly with automatic x402 payment handling. No manual wallet setup needed.
 
 ---
 

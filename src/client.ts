@@ -181,6 +181,7 @@ async function showNumberScreen() {
     const nums = allNumbers.map((n) => n.phoneNumber).join(", ");
     const config = [
       "# ahoy - Agent Configuration",
+      "npx skills add github:trionlabs/ahoy",
       `HUMAN_ID=${humanId}`,
       `NUMBERS=${nums}`,
       `API=${apiBase}/messages`,
