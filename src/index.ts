@@ -134,23 +134,6 @@ const routes = {
       }),
     },
   },
-  "GET /number": {
-    accepts: [
-      { scheme: "exact" as const, price: "$0.00", network: WORLD_CHAIN, payTo: PAY_TO },
-      { scheme: "exact" as const, price: "$0.00", network: BASE_CHAIN, payTo: PAY_TO },
-    ],
-    extensions: {
-      ...declareAgentkitExtension({
-        statement: "Look up your assigned phone number",
-        mode: { type: "free-trial" as const, uses: 100 },
-      }),
-      ...declareDiscoveryExtension({
-        output: {
-          example: { phoneNumber: "+14155551234" },
-        },
-      }),
-    },
-  },
   "GET /verify-phone": {
     accepts: [
       { scheme: "exact" as const, price: "$0.01", network: WORLD_CHAIN, payTo: PAY_TO },
@@ -160,40 +143,6 @@ const routes = {
       ...declareDiscoveryExtension({
         output: {
           example: { verified: true, humanId: "0x1d73..." },
-        },
-      }),
-    },
-  },
-  "GET /messages": {
-    accepts: [
-      { scheme: "exact" as const, price: "$0.00", network: WORLD_CHAIN, payTo: PAY_TO },
-      { scheme: "exact" as const, price: "$0.00", network: BASE_CHAIN, payTo: PAY_TO },
-    ],
-    extensions: {
-      ...declareAgentkitExtension({
-        statement: "Read your SMS inbox",
-        mode: { type: "free-trial" as const, uses: 100 },
-      }),
-      ...declareDiscoveryExtension({
-        output: {
-          example: { messages: [{ from: "+15551234567", body: "Hello", receivedAt: "2026-03-27T00:00:00Z" }] },
-        },
-      }),
-    },
-  },
-  "GET /status": {
-    accepts: [
-      { scheme: "exact" as const, price: "$0.00", network: WORLD_CHAIN, payTo: PAY_TO },
-      { scheme: "exact" as const, price: "$0.00", network: BASE_CHAIN, payTo: PAY_TO },
-    ],
-    extensions: {
-      ...declareAgentkitExtension({
-        statement: "Check your number status and billing",
-        mode: { type: "free-trial" as const, uses: 100 },
-      }),
-      ...declareDiscoveryExtension({
-        output: {
-          example: { humanId: "0x1d73...", numbers: [], quota: "0/5" },
         },
       }),
     },
