@@ -159,16 +159,27 @@ export function getXmtpAddress(): string | null {
 export async function sendXmtpDm(
   toAddress: string,
   message: string,
-): Promise<boolean> {
-  if (!agent) return false;
+): Promise<{ sent: boolean; error?: string }> {
+  if (!agent) return { sent: false, error: "XMTP not initialized" };
   try {
+    // Check if recipient can receive XMTP messages
+    const canMsg = await agent.client.canMessage([
+      { identifier: toAddress, identifierKind: IdentifierKind.Ethereum },
+    ]);
+    const reachable = canMsg.get(toAddress.toLowerCase());
+    console.log(`[xmtp] canMessage ${toAddress}: ${reachable}`);
+
+    if (!reachable) {
+      return { sent: false, error: "Recipient not reachable on XMTP" };
+    }
+
     const dm = await agent.createDmWithAddress(toAddress as `0x${string}`);
     await dm.sendText(message);
     console.log(`[xmtp] sent DM to ${toAddress}`);
-    return true;
-  } catch (e) {
-    console.error(`[xmtp] send DM failed:`, e);
-    return false;
+    return { sent: true };
+  } catch (e: any) {
+    console.error(`[xmtp] send DM failed:`, e?.message || e, e?.code || "");
+    return { sent: false, error: e?.message || String(e) };
   }
 }
 

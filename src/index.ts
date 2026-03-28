@@ -44,7 +44,7 @@ let initXmtp: () => Promise<void> = async () => {};
 let forwardSmsToXmtp: (humanId: string, from: string, body: string) => Promise<void> = async () => {};
 let registerXmtpSubscriber: (humanId: string, walletAddress: string) => void = () => {};
 let getXmtpAddress: () => string | null = () => null;
-let sendXmtpDm: (to: string, msg: string) => Promise<boolean> = async () => false;
+let sendXmtpDm: (to: string, msg: string) => Promise<{ sent: boolean; error?: string }> = async () => ({ sent: false, error: "XMTP not initialized" });
 try {
   const xmtp = await import("./xmtp.js");
   initXmtp = xmtp.initXmtp;
@@ -592,8 +592,8 @@ app.post("/admin/xmtp-send", async (c) => {
   }
   const { to, message } = (await c.req.json()) as { to: string; message: string };
   if (!to || !message) return c.json({ error: "Missing to or message" }, 400);
-  const sent = await sendXmtpDm(to, message);
-  return c.json({ sent, to });
+  const result = await sendXmtpDm(to, message);
+  return c.json({ ...result, to });
 });
 
 // GET /mappings, debug: see all human -> number mappings
