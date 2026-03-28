@@ -181,6 +181,37 @@ const httpServer = new x402HTTPResourceServer(resourceServer, routes)
 // --- Hono App ---
 const app = new Hono();
 
+// --- Session management for Mini App ---
+import { randomBytes, createHmac } from "node:crypto";
+const SESSION_SECRET = process.env.TWILIO_AUTH_TOKEN || randomBytes(32).toString("hex");
+const sessions = new Map<string, { humanId: string; createdAt: number }>();
+const SESSION_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+function createSession(humanId: string): string {
+  const token = randomBytes(32).toString("hex");
+  sessions.set(token, { humanId, createdAt: Date.now() });
+  return token;
+}
+
+function validateSession(token: string | null): string | null {
+  if (!token) return null;
+  const session = sessions.get(token);
+  if (!session) return null;
+  if (Date.now() - session.createdAt > SESSION_TTL) {
+    sessions.delete(token);
+    return null;
+  }
+  return session.humanId;
+}
+
+// Clean expired sessions every hour
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, session] of sessions) {
+    if (now - session.createdAt > SESSION_TTL) sessions.delete(token);
+  }
+}, 60 * 60 * 1000);
+
 // --- Force HTTPS in request URL behind reverse proxy ---
 app.use(async (c, next) => {
   const proto = c.req.header("x-forwarded-proto");
@@ -308,10 +339,9 @@ if (!DEV_MODE) {
 
 // --- Helper: extract humanId + wallet address from agentkit header ---
 async function resolveAgent(req: Request): Promise<{ humanId: string; wallet?: string } | null> {
-  // DEV_MODE or X-Demo-Key header (for sybil demo without toggling DEV_MODE)
-  const devHumanId = req.headers.get("X-Dev-Human-Id");
-  if (devHumanId && (DEV_MODE || req.headers.get("X-Demo-Key") === process.env.TWILIO_AUTH_TOKEN)) {
-    return { humanId: devHumanId };
+  if (DEV_MODE) {
+    const devHumanId = req.headers.get("X-Dev-Human-Id");
+    if (devHumanId) return { humanId: devHumanId };
   }
 
   const header = req.headers.get(AGENTKIT);
@@ -541,8 +571,12 @@ app.get("/dashboard/events", (c) => {
   });
 });
 
-// POST /dashboard/emit, push events to dashboard (used by sybil-dashboard script)
+// POST /dashboard/emit, admin only (used by sybil-dashboard script)
 app.post("/dashboard/emit", async (c) => {
+  const auth = c.req.header("authorization");
+  if (auth !== `Bearer ${process.env.TWILIO_AUTH_TOKEN}` && !DEV_MODE) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
   const { type, data } = (await c.req.json()) as { type: string; data: Record<string, unknown> };
   emitDashboardEvent({ type: type as DashboardEvent["type"], data });
   return c.json({ ok: true });
@@ -595,8 +629,12 @@ app.post("/admin/xmtp-send", async (c) => {
   return c.json({ ...result, to });
 });
 
-// GET /mappings, debug: see all human -> number mappings
+// GET /mappings, admin only
 app.get("/mappings", (c) => {
+  const auth = c.req.header("authorization");
+  if (auth !== `Bearer ${process.env.TWILIO_AUTH_TOKEN}`) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
   return c.json(getAllMappings());
 });
 
@@ -739,29 +777,19 @@ app.post("/app/verify", async (c) => {
     console.log("[miniapp] v4 verify error:", e);
   }
 
-  // Fallback: accept MiniKit proof directly (bridge only exists inside World App)
-  if (!verified && payload.nullifier_hash && payload.proof) {
-    console.log("[miniapp] accepting MiniKit proof directly");
-    verified = true;
-  }
-
   if (!verified) {
+    console.log("[miniapp] verification failed, no fallback");
     return c.json({ error: "Proof verification failed" }, 400);
   }
 
   const humanId = payload.nullifier_hash;
   const numbers = getNumbersByHuman(humanId);
 
-  // Re-activate any suspended numbers
-  const suspended = numbers.filter((n) => n.status === "suspended");
-  for (const s of suspended) {
-    extendBillingById(s.id, 30);
-    console.log(`[miniapp] reactivated ${humanId} -> ${s.phoneNumber}`);
-  }
-
-  // Return existing numbers if any
+  // Return existing numbers (suspended numbers shown but NOT reactivated for free)
   if (numbers.length > 0) {
+    const sessionToken = createSession(humanId);
     return c.json({
+      sessionToken,
       humanId,
       numbers: getNumbersByHuman(humanId),
       verified: true,
@@ -780,18 +808,23 @@ app.post("/app/verify", async (c) => {
     }
   }
 
+  const sessionToken = createSession(humanId);
   return c.json({
     humanId,
+    sessionToken,
     numbers: getNumbersByHuman(humanId),
     verified: true,
     needsPayment: !DEV_MODE && getNumbersByHuman(humanId).length === 0,
   });
 });
 
-// POST /app/provision, provision an additional number (humanId already verified)
+// POST /app/provision, provision an additional number (session required)
 app.post("/app/provision", async (c) => {
-  const { humanId } = (await c.req.json()) as { humanId: string };
-  if (!humanId) return c.json({ error: "Missing humanId" }, 400);
+  const { humanId, sessionToken } = (await c.req.json()) as { humanId: string; sessionToken: string };
+  const sessionHumanId = validateSession(sessionToken);
+  if (!sessionHumanId || sessionHumanId !== humanId) {
+    return c.json({ error: "Invalid or expired session" }, 401);
+  }
 
   if (!(await canProvision())) {
     return c.json({ error: "Service temporarily unavailable. Try again later." }, 503);
@@ -830,10 +863,11 @@ app.post("/app/pay/confirm", async (c) => {
     reference: string;
   };
 
-  // Validate reference
+  // Validate reference (expires after 10 minutes)
   const ref = paymentRefs.get(reference);
-  if (!ref || ref.humanId !== humanId) {
-    return c.json({ error: "Invalid payment reference" }, 400);
+  if (!ref || ref.humanId !== humanId || Date.now() - ref.createdAt > 10 * 60 * 1000) {
+    if (ref) paymentRefs.delete(reference);
+    return c.json({ error: "Invalid or expired payment reference" }, 400);
   }
   paymentRefs.delete(reference);
 
@@ -861,8 +895,12 @@ app.post("/app/pay/confirm", async (c) => {
 
 // POST /app/release, release a specific number (DB + Twilio)
 app.post("/app/release", async (c) => {
-  const { humanId, phoneNumber: releasePhone } = (await c.req.json()) as { humanId: string; phoneNumber: string };
-  if (!humanId || !releasePhone) return c.json({ error: "Missing humanId or phoneNumber" }, 400);
+  const { humanId, phoneNumber: releasePhone, sessionToken } = (await c.req.json()) as { humanId: string; phoneNumber: string; sessionToken: string };
+  const sessionHumanId = validateSession(sessionToken);
+  if (!sessionHumanId || sessionHumanId !== humanId) {
+    return c.json({ error: "Invalid or expired session" }, 401);
+  }
+  if (!releasePhone) return c.json({ error: "Missing phoneNumber" }, 400);
 
   // Find the number record to get the Twilio SID
   const nums = getNumbersByHuman(humanId);
@@ -886,10 +924,14 @@ app.post("/app/release", async (c) => {
   return c.json({ released: true, remaining: getNumbersByHuman(humanId) });
 });
 
-// GET /app/inbox, SMS inbox for a human
+// GET /app/inbox, SMS inbox (session required)
 app.get("/app/inbox", (c) => {
   const humanId = c.req.query("humanId");
-  if (!humanId) return c.json({ error: "Missing humanId" }, 400);
+  const sessionParam = c.req.query("session") ?? null;
+  const sessionHumanId = validateSession(sessionParam);
+  if (!sessionHumanId || sessionHumanId !== humanId) {
+    return c.json({ error: "Invalid or expired session" }, 401);
+  }
   return c.json({ messages: getMessages(humanId) });
 });
 

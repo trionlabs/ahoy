@@ -16,7 +16,8 @@ import {
 
 // --- State ---
 let humanId: string | null = null;
-let phoneNumber: string | null = null; // first/primary number
+let sessionToken: string | null = null;
+let phoneNumber: string | null = null;
 let allNumbers: Array<{ id: number; phoneNumber: string; status: string; paidUntil: number }> = [];
 let devMode = false;
 let inboxInterval: ReturnType<typeof setInterval> | null = null;
@@ -265,6 +266,7 @@ async function doVerify() {
     }
 
     humanId = data.humanId;
+    sessionToken = data.sessionToken || null;
 
     allNumbers = data.numbers || [];
     if (data.needsPayment) {
@@ -289,7 +291,7 @@ async function doPay(token: "wld" | "usdc") {
     const initRes = await fetch("/app/pay/init", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ humanId }),
+      body: JSON.stringify({ humanId, sessionToken }),
     });
     const { reference, payTo } = await initRes.json();
 
@@ -360,7 +362,7 @@ async function loadInbox() {
 
   try {
     const res = await fetch(
-      `/app/inbox?humanId=${encodeURIComponent(humanId)}`,
+      `/app/inbox?humanId=${encodeURIComponent(humanId)}&session=${encodeURIComponent(sessionToken || "")}`,
     );
     const data = await res.json();
     const list = $("inbox-list");
@@ -401,7 +403,7 @@ async function doProvisionNew() {
     const res = await fetch("/app/provision", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ humanId }),
+      body: JSON.stringify({ humanId, sessionToken }),
     });
     const data = await res.json();
     if (data.error) {
@@ -421,7 +423,7 @@ async function releasePhone(phone: string) {
     const res = await fetch("/app/release", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ humanId, phoneNumber: phone }),
+      body: JSON.stringify({ humanId, phoneNumber: phone, sessionToken }),
     });
     const data = await res.json();
     if (data.released) {
