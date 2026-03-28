@@ -47,7 +47,8 @@ function decrypt(encrypted: string, ivHex: string): string {
 }
 
 // --- Database ---
-const db = new Database("ahoy.db");
+const dbPath = process.env.DB_PATH || "ahoy.db";
+const db = new Database(dbPath);
 db.pragma("journal_mode = WAL");
 
 db.exec(`
