@@ -295,13 +295,13 @@ async function doPay(token: "wld" | "usdc") {
           ? [
               {
                 symbol: Tokens.WLD,
-                token_amount: tokenToDecimals(0.5, Tokens.WLD).toString(),
+                token_amount: tokenToDecimals(1, Tokens.WLD).toString(),
               },
             ]
           : [
               {
                 symbol: Tokens.USDC,
-                token_amount: tokenToDecimals(0.1, Tokens.USDC).toString(),
+                token_amount: tokenToDecimals(0.99, Tokens.USDC).toString(),
               },
             ];
 
