@@ -45,6 +45,14 @@ export async function initXmtp(): Promise<void> {
     return;
   }
 
+  // Persist XMTP DB in /app/data if available (Railway volume)
+  const dbDir = process.env.XMTP_DB_DIR || ".";
+  if (dbDir !== ".") {
+    const { mkdirSync } = await import("node:fs");
+    try { mkdirSync(dbDir, { recursive: true }); } catch {}
+    process.chdir(dbDir);
+  }
+
   agent = await Agent.createFromEnv({
     env: (process.env.XMTP_ENV as "local" | "dev" | "production") || "dev",
   });
