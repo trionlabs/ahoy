@@ -325,7 +325,7 @@
 
   <div id="dev-banner" class="dev-banner">DEV MODE</div>
 
-  <!-- Screen 1: Verify -->
+  <!-- Screen 1: Verify (MiniKit in World App, IDKit in browser, dev mode locally) -->
   <div id="screen-verify" class="screen active">
     <div class="spacer"></div>
     <div class="logo-row">
@@ -340,10 +340,10 @@
     <div style="height:1.25rem"></div>
     <div class="headline">Your Agents.<br/>One Number.</div>
     <p class="subtitle">
-      Verify once with World&nbsp;ID. Every agent<br/>you deploy gets the same phone number.
+      Verify with World&nbsp;ID to get a phone number<br/>shared across all your agents.
     </p>
     <div class="spacer"></div>
-    <button id="btn-verify" class="btn btn-primary"><span class="btn-text">Sign in with World ID</span></button>
+    <button id="btn-verify" class="btn btn-primary"><span class="btn-text">Verify with World ID</span></button>
     <p id="status" class="info"></p>
   </div>
 
@@ -360,7 +360,7 @@
       <span class="logo">AHOY!</span>
     </div>
     <div style="height:0.75rem"></div>
-    <p class="subtitle">Verified. Pay to provision your number.</p>
+    <p class="subtitle">Verified. Provisioning failed — try again.</p>
     <div class="pay-options">
       <div id="btn-pay-usdc" class="pay-option">
         <div class="pay-icon pay-icon-usdc">
@@ -447,6 +447,7 @@
       });
     });
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/@worldcoin/idkit-standalone@2.2.5/build/index.global.js"></script>
   <script type="module" src="/app.js"></script>
 </body>
 </html>

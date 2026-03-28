@@ -1,9 +1,10 @@
 /**
- * Mini App client, runs inside World App's WebView.
+ * Mini App client — runs inside World App (MiniKit) or any browser (IDKit).
  * Bundled by esbuild into public/app.js.
  *
- * When NOT in World App (dev/browser), falls back to dev mode:
- * skips MiniKit commands, calls backend directly with mock auth.
+ * World App WebView → MiniKit verification
+ * Regular browser   → IDKit standalone (QR code / deep link)
+ * No app_id (local) → dev mode with mock auth
  */
 
 import {
@@ -14,12 +15,27 @@ import {
   type PayCommandInput,
 } from "@worldcoin/minikit-js";
 
+// IDKit standalone sets window.IDKit when loaded via script tag
+declare global {
+  interface Window {
+    IDKit?: {
+      init: (config: any) => void;
+      open: () => Promise<unknown>;
+      close: () => Promise<unknown>;
+      reset: () => void;
+      isInitialized: boolean;
+    };
+  }
+}
+
 // --- State ---
 let humanId: string | null = null;
 let sessionToken: string | null = null;
 let phoneNumber: string | null = null;
 let allNumbers: Array<{ id: number; phoneNumber: string; status: string; paidUntil: number }> = [];
 let devMode = false;
+let useIDKit = false;
+let idkitVerifyData: any = null;
 let inboxInterval: ReturnType<typeof setInterval> | null = null;
 
 // --- DOM helpers ---
@@ -63,7 +79,44 @@ document.addEventListener("DOMContentLoaded", () => {
     MiniKit.install(appId);
   }
 
-  if (!MiniKit.isInstalled()) {
+  if (MiniKit.isInstalled()) {
+    // In World App — use MiniKit
+  } else if (appId && window.IDKit) {
+    // Regular browser with app_id — use IDKit for World ID verification
+    useIDKit = true;
+    window.IDKit.init({
+      app_id: appId as `app_${string}`,
+      action: "provision-number",
+      verification_level: "device",
+      handleVerify: async (proof: any) => {
+        const res = await fetch("/app/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payload: proof, action: "provision-number" }),
+        });
+        idkitVerifyData = await res.json();
+        if (!idkitVerifyData.humanId) {
+          throw new Error(idkitVerifyData.error || "Verification failed");
+        }
+      },
+      onSuccess: () => {
+        humanId = idkitVerifyData.humanId;
+        sessionToken = idkitVerifyData.sessionToken || null;
+        allNumbers = idkitVerifyData.numbers || [];
+
+        setBtnLoading("btn-verify", false);
+        if (idkitVerifyData.needsPayment) {
+          showScreen("screen-pay");
+        } else if (allNumbers.length > 0) {
+          phoneNumber = allNumbers[0].phoneNumber;
+          showNumberScreen();
+        } else {
+          showScreen("screen-pay");
+        }
+      },
+    });
+  } else {
+    // No app_id or no IDKit script — dev mode
     devMode = true;
     $("dev-banner").classList.add("visible");
   }
@@ -200,6 +253,16 @@ async function doVerify() {
   setBtnLoading("btn-verify", true);
 
   try {
+    // IDKit: open the modal, callbacks handle the rest
+    if (useIDKit && window.IDKit) {
+      setStatus("Scan QR code with World App", "info");
+      window.IDKit.open().catch(() => {
+        setBtnLoading("btn-verify", false);
+        setStatus("", "info");
+      });
+      return;
+    }
+
     let payload: unknown;
 
     if (devMode) {
@@ -212,7 +275,7 @@ async function doVerify() {
         verification_level: "orb",
       };
     } else {
-      // Auto-retry once if first attempt fails (MiniKit cold start)
+      // MiniKit: auto-retry once if first attempt fails (cold start)
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
           const result = await MiniKit.commandsAsync.verify({
@@ -289,7 +352,8 @@ async function doPay(token: "wld" | "usdc") {
     });
     const { reference, payTo } = await initRes.json();
 
-    if (!devMode) {
+    if (!devMode && !useIDKit) {
+      // MiniKit Pay — only available inside World App
       const payload: PayCommandInput = {
         reference,
         to: payTo,

@@ -1017,8 +1017,8 @@ app.post("/app/verify", async (c) => {
     });
   }
 
-  // First-time user: auto-provision in dev mode, show pay screen in production
-  if (DEV_MODE && (await canProvision())) {
+  // First-time user: auto-provision (first number free for verified humans)
+  if (await canProvision()) {
     try {
       const { phoneNumber: num, sid } = await provisionNumber(BASE_URL);
       setNumber(humanId, num, sid);
@@ -1030,12 +1030,13 @@ app.post("/app/verify", async (c) => {
   }
 
   const sessionToken = createSession(humanId);
+  const updatedNumbers = getNumbersByHuman(humanId);
   return c.json({
     humanId,
     sessionToken,
-    numbers: getNumbersByHuman(humanId),
+    numbers: updatedNumbers,
     verified: true,
-    needsPayment: !DEV_MODE && getNumbersByHuman(humanId).length === 0,
+    needsPayment: updatedNumbers.length === 0, // only if auto-provision failed
   });
 });
 
