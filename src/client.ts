@@ -29,10 +29,7 @@ function showScreen(id: string) {
   document.querySelectorAll(".screen").forEach((s) => {
     s.classList.remove("active");
   });
-  // Small delay for transition
-  requestAnimationFrame(() => {
-    $(id).classList.add("active");
-  });
+  $(id).classList.add("active");
 }
 
 function setStatus(msg: string, type: "info" | "error" | "success" = "info") {

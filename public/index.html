@@ -13,6 +13,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300;1,9..40,400&display=swap" rel="stylesheet" />
+  <script>
+    // Theme: must run in <head> before first paint to prevent flash
+    (function() {
+      var dark = localStorage.getItem('theme') === 'dark' ||
+        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (dark) document.documentElement.classList.add('dark');
+    })();
+  </script>
   <style>
     :root {
       --ink: #171717;
@@ -26,6 +34,8 @@
       --accent-green-bg: #E8F5E9;
       --accent-blue: #1565C0;
       --accent-blue-bg: #E3F2FD;
+      --accent-purple: #7E57C2;
+      --accent-purple-bg: #EDE7F6;
       --accent-red: #C62828;
       --accent-red-bg: #FFEBEE;
     }
@@ -42,12 +52,18 @@
       --accent-green-bg: #1B3A1E;
       --accent-blue: #42A5F5;
       --accent-blue-bg: #0D253A;
+      --accent-purple: #CE93D8;
+      --accent-purple-bg: #1A0E2E;
       --accent-red: #EF5350;
       --accent-red-bg: #2A1010;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    *, *::before, *::after {
+    /* Block transitions until page is loaded to prevent theme flash */
+    html:not(.loaded) *, html:not(.loaded) *::before, html:not(.loaded) *::after {
+      transition: none !important;
+    }
+    .loaded *, .loaded *::before, .loaded *::after {
       transition-property: background-color, border-color, color, fill, stroke;
       transition-duration: 0.25s;
       transition-timing-function: ease;
@@ -66,7 +82,7 @@
       -moz-osx-font-smoothing: grayscale;
     }
 
-    /* Grain overlay */
+    /* Grain */
     body::after {
       content: '';
       position: fixed;
@@ -81,60 +97,67 @@
     .dev-banner {
       display: none; width: 100%; padding: 6px;
       background: #FFF8E1; color: #F57F17;
-      font-size: 0.72rem; text-align: center; font-weight: 500; letter-spacing: 0.03em;
+      font-size: 0.75rem; text-align: center; font-weight: 500; letter-spacing: 0.03em;
     }
     .dark .dev-banner { background: #332b00; color: #ffd60a; }
     .dev-banner.visible { display: block; }
 
+    /* Screens — no opacity transition to prevent flash on load */
     .screen {
       display: none; flex-direction: column; align-items: center;
-      padding: 2.5rem 1.5rem 2rem;
+      padding: 2rem 1.5rem 1.5rem;
       width: 100%; max-width: 420px; min-height: 100dvh;
-      gap: 1.25rem; opacity: 0; transition: opacity 0.35s ease;
+      gap: 1rem;
     }
-    .screen.active { display: flex; opacity: 1; }
-
+    .screen.active { display: flex; }
     .spacer { flex: 1; }
 
-    /* Logo */
-    .logo-mark {
-      width: 72px; height: 72px; border-radius: 22px;
-      background: var(--frame);
-      border: 1px solid var(--stroke);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 2rem;
+    /* Logo — inline, matching landing nav */
+    .logo-row {
+      display: flex; align-items: center; gap: 0.5rem;
     }
+    .logo-row svg { color: var(--ink); }
     .logo {
       font-family: 'Syne', sans-serif;
-      font-size: 2.8rem; font-weight: 800; letter-spacing: -0.04em;
-      color: var(--ink);
-      text-transform: uppercase;
+      font-size: 1.15rem; font-weight: 800; letter-spacing: -0.04em;
+      color: var(--ink); text-transform: uppercase;
+    }
+
+    /* Headline */
+    .headline {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem; font-weight: 800; letter-spacing: -0.04em;
+      color: var(--ink); text-transform: uppercase;
+      line-height: 0.92; text-align: center;
     }
     .subtitle {
       color: var(--ink-secondary);
-      font-size: 0.9rem; text-align: center; line-height: 1.65;
+      font-size: 0.9rem; text-align: center; line-height: 1.6;
     }
     .label {
-      font-size: 0.7rem; color: var(--ink-muted); text-transform: uppercase;
-      letter-spacing: 0.1em; font-weight: 600; width: 100%;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.75rem; color: var(--ink-muted); text-transform: uppercase;
+      letter-spacing: 0.08em; font-weight: 600; width: 100%;
     }
 
-    /* Feature pills */
-    .pills { display: flex; gap: 0.5rem; width: 100%; }
-    .pill {
-      flex: 1; padding: 0.65rem 0.5rem;
-      background: var(--frame); border-radius: 12px; border: 1px solid var(--stroke);
-      text-align: center; font-size: 0.72rem; color: var(--ink-secondary);
+    /* Chat bubbles */
+    .bubbles {
+      display: flex; flex-direction: column; gap: 0.35rem;
+      align-items: center; width: 100%; margin-top: 0.25rem;
     }
-    .pill b {
-      display: block; font-size: 0.95rem; margin-bottom: 2px;
-      color: var(--ink); font-weight: 500;
-      font-family: 'Syne', sans-serif;
+    .bubble {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.5rem 0.9rem; border-radius: 1.125rem;
+      font-size: 0.84rem; font-weight: 400; line-height: 1.4;
     }
+    .bubble-call { background: var(--accent-green-bg); color: var(--accent-green); }
+    .bubble-sms { background: var(--accent-blue-bg); color: var(--accent-blue); }
+    .bubble-xmtp { background: var(--accent-purple-bg); color: var(--accent-purple); }
+    .bubble svg { width: 14px; height: 14px; flex-shrink: 0; }
 
     /* Buttons */
     .btn {
-      width: 100%; padding: 0.95rem; border: none; border-radius: 9999px;
+      width: 100%; padding: 0.9rem; border: none; border-radius: 9999px;
       font-family: 'DM Sans', sans-serif;
       font-size: 0.9rem; font-weight: 500; cursor: pointer;
       transition: all 0.15s; position: relative; overflow: hidden;
@@ -148,7 +171,7 @@
       border: 1px solid var(--stroke);
     }
     .btn-outline:active { border-color: var(--ink-muted); }
-    .btn-sm { width: auto; padding: 0.4rem 0.9rem; font-size: 0.78rem; border-radius: 9999px; }
+    .btn-sm { width: auto; padding: 0.45rem 1rem; font-size: 0.8rem; border-radius: 9999px; }
     .btn-loading .btn-text { visibility: hidden; }
     .btn-loading::after {
       content: ''; position: absolute; top: 50%; left: 50%;
@@ -160,145 +183,126 @@
 
     /* Phone card */
     .phone-card {
-      width: 100%; padding: 2rem 1.5rem;
-      background: var(--frame);
-      border-radius: 20px; border: 1px solid var(--stroke);
+      width: 100%; padding: 1.5rem 1.25rem;
+      background: var(--cream);
+      border-radius: 16px; border: 1px solid var(--stroke);
       text-align: center; cursor: pointer; transition: all 0.2s; position: relative;
     }
     .phone-card:active { transform: scale(0.98); border-color: var(--ink-muted); }
     .phone-number {
       font-family: 'Syne', sans-serif;
-      font-size: 1.9rem; font-weight: 700; font-variant-numeric: tabular-nums;
+      font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums;
       letter-spacing: -0.02em; color: var(--ink);
     }
-    .phone-meta { display: flex; justify-content: center; gap: 0.75rem; margin-top: 0.75rem; }
+    .phone-meta { display: flex; justify-content: center; gap: 0.75rem; margin-top: 0.65rem; }
     .phone-badge {
-      font-size: 0.65rem; padding: 3px 8px; border-radius: 9999px;
+      font-size: 0.72rem; padding: 3px 10px; border-radius: 9999px;
       background: var(--accent-green-bg); color: var(--accent-green); font-weight: 500;
     }
     .phone-badge.expires { background: var(--accent-blue-bg); color: var(--accent-blue); }
-    .phone-hint { font-size: 0.68rem; color: var(--ink-muted); margin-top: 0.6rem; }
+    .phone-hint { font-size: 0.72rem; color: var(--ink-muted); margin-top: 0.5rem; }
     .copied-toast {
       position: absolute; bottom: -1.8rem; left: 50%; transform: translateX(-50%);
-      background: var(--ink); color: var(--bone); padding: 0.25rem 0.7rem;
-      border-radius: 9999px; font-size: 0.72rem;
+      background: var(--ink); color: var(--bone); padding: 0.3rem 0.8rem;
+      border-radius: 9999px; font-size: 0.75rem;
       opacity: 0; transition: opacity 0.2s; pointer-events: none;
     }
     .copied-toast.show { opacity: 1; }
 
-    /* Collapsible agent config */
+    /* Sections */
     .section-toggle {
       width: 100%; display: flex; justify-content: space-between; align-items: center;
-      cursor: pointer; padding: 0.5rem 0;
+      cursor: pointer; padding: 0.6rem 0;
     }
-    .section-toggle .arrow { color: var(--ink-muted); font-size: 0.8rem; transition: transform 0.2s; }
+    .section-toggle .arrow { color: var(--ink-muted); font-size: 0.85rem; transition: transform 0.2s; }
     .section-toggle.open .arrow { transform: rotate(90deg); }
-    .section-content { width: 100%; display: none; flex-direction: column; gap: 0.4rem; }
+    .section-content { width: 100%; display: none; flex-direction: column; gap: 0.5rem; }
     .section-content.open { display: flex; }
 
     .config-row {
       display: flex; justify-content: space-between; align-items: center;
-      background: var(--frame); border-radius: 10px; padding: 0.65rem 0.85rem;
+      background: var(--cream); border-radius: 10px; padding: 0.7rem 0.9rem;
       border: 1px solid var(--stroke); cursor: pointer; transition: border-color 0.15s;
     }
     .config-row:active { border-color: var(--ink-muted); }
-    .config-label { font-size: 0.68rem; color: var(--ink-muted); font-weight: 600; }
+    .config-label { font-size: 0.75rem; color: var(--ink-muted); font-weight: 500; }
     .config-value {
-      font-size: 0.72rem; color: var(--ink-secondary); font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.75rem; color: var(--ink-secondary); font-family: 'SF Mono', 'Fira Code', monospace;
       max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
 
     /* Pay options */
-    .pay-options { width: 100%; display: flex; flex-direction: column; gap: 0.75rem; }
+    .pay-options { width: 100%; display: flex; flex-direction: column; gap: 0.6rem; }
     .pay-option {
       display: flex; align-items: center; gap: 1rem;
-      padding: 1rem 1.25rem; background: var(--frame); border-radius: 16px;
+      padding: 1rem 1.15rem; background: var(--cream); border-radius: 14px;
       border: 1px solid var(--stroke); cursor: pointer; transition: all 0.15s;
     }
     .pay-option:active { transform: scale(0.98); border-color: var(--ink-muted); }
-    .pay-token { font-size: 1.4rem; }
+    .pay-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .pay-icon svg { width: 20px; height: 20px; }
+    .pay-icon-wld { background: var(--accent-blue-bg); color: var(--accent-blue); }
+    .pay-icon-usdc { background: var(--accent-green-bg); color: var(--accent-green); }
     .pay-details { flex: 1; }
     .pay-amount { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.95rem; color: var(--ink); }
-    .pay-desc { font-size: 0.78rem; color: var(--ink-muted); }
-    .pay-arrow { color: var(--ink-muted); }
+    .pay-desc { font-size: 0.8rem; color: var(--ink-muted); margin-top: 0.1rem; }
+    .pay-arrow { color: var(--ink-muted); font-size: 1.1rem; }
 
     /* Inbox */
     .inbox-header { display: flex; width: 100%; justify-content: space-between; align-items: center; }
     .inbox {
-      width: 100%; display: flex; flex-direction: column; gap: 0.4rem;
+      width: 100%; display: flex; flex-direction: column; gap: 0;
       flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
     }
     .msg {
-      background: var(--frame); border-radius: 12px; padding: 0.75rem 0.9rem;
-      border: 1px solid var(--stroke);
+      background: transparent; border-radius: 0; padding: 0.75rem 0;
+      border: none; border-top: 1px solid var(--stroke);
     }
-    .msg-from { font-size: 0.72rem; color: var(--ink-secondary); font-weight: 500; }
+    .msg-from {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.75rem; color: var(--ink-secondary); font-weight: 600;
+    }
     .msg-body { margin-top: 0.25rem; font-size: 0.9rem; line-height: 1.5; color: var(--ink); }
-    .msg-time { margin-top: 0.2rem; font-size: 0.65rem; color: var(--ink-muted); }
-    .empty { color: var(--ink-muted); text-align: center; padding: 2.5rem 1rem; font-size: 0.85rem; line-height: 1.6; }
+    .msg-time { margin-top: 0.2rem; font-size: 0.7rem; color: var(--ink-muted); }
+    .empty { color: var(--ink-muted); text-align: center; padding: 2.5rem 1rem; font-size: 0.9rem; line-height: 1.6; }
 
     /* Status */
     #status, #pay-status {
-      font-size: 0.8rem; min-height: 1.2em; text-align: center; transition: color 0.2s;
+      font-size: 0.85rem; min-height: 1.2em; text-align: center; transition: color 0.2s;
     }
     .error { color: var(--accent-red); }
     .info { color: var(--ink-muted); }
     .success { color: var(--accent-green); }
 
-    .divider { width: 100%; height: 1px; background: var(--stroke); margin: 0.15rem 0; }
+    .divider { width: 100%; height: 1px; background: var(--stroke); margin: 0.25rem 0; }
 
-    /* Number item with release */
+    /* Number item */
     .number-item {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
+      width: 100%; display: flex; flex-direction: column; gap: 0.5rem;
     }
     .btn-release-inline {
-      width: 100%;
-      padding: 0.45rem;
-      background: transparent;
-      color: var(--ink-muted);
-      border: 1px solid var(--stroke);
-      border-radius: 9999px;
-      font-size: 0.72rem;
-      cursor: pointer;
-      transition: all 0.15s;
+      width: 100%; padding: 0.5rem;
+      background: transparent; color: var(--ink-muted);
+      border: 1px solid var(--stroke); border-radius: 9999px;
+      font-size: 0.78rem; cursor: pointer; transition: all 0.15s;
     }
     .btn-release-inline:active { color: var(--accent-red); border-color: var(--accent-red); }
     .release-confirm {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      justify-content: center;
+      display: flex; align-items: center; gap: 0.5rem; justify-content: center;
     }
     .btn-confirm-yes {
-      padding: 0.35rem 0.8rem;
-      background: var(--accent-red-bg);
-      color: var(--accent-red);
-      border: 1px solid transparent;
-      border-radius: 9999px;
-      font-size: 0.72rem;
-      cursor: pointer;
+      padding: 0.4rem 0.9rem; background: var(--accent-red-bg); color: var(--accent-red);
+      border: 1px solid transparent; border-radius: 9999px; font-size: 0.78rem; cursor: pointer;
     }
     .btn-confirm-no {
-      padding: 0.35rem 0.8rem;
-      background: transparent;
-      color: var(--ink-muted);
-      border: 1px solid var(--stroke);
-      border-radius: 9999px;
-      font-size: 0.72rem;
-      cursor: pointer;
+      padding: 0.4rem 0.9rem; background: transparent; color: var(--ink-muted);
+      border: 1px solid var(--stroke); border-radius: 9999px; font-size: 0.78rem; cursor: pointer;
     }
 
-    /* Danger (legacy bottom button) */
-    .btn-danger {
-      background: transparent; color: var(--accent-red); border: 1px solid var(--stroke);
-      font-size: 0.82rem; padding: 0.7rem;
-    }
-    .btn-danger:active { background: var(--accent-red-bg); }
-
-    /* Number reveal animation */
     @keyframes revealUp {
       from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
@@ -313,22 +317,33 @@
   <!-- Screen 1: Verify -->
   <div id="screen-verify" class="screen active">
     <div class="spacer"></div>
-    <div class="logo-mark">
-      <svg width="32" height="32" viewBox="0 0 82 110" fill="none">
+    <div class="logo-row">
+      <svg width="20" height="20" viewBox="0 0 82 110" fill="none">
         <path d="M41 0C18.36 0 0 18.36 0 41v68h10V41c0-17.09 13.91-31 31-31s31 13.91 31 31v68h10V41C82 18.36 63.64 0 41 0z" fill="currentColor"/>
         <rect x="28" y="30" width="10" height="38" rx="2" fill="currentColor"/>
         <rect x="44" y="30" width="10" height="38" rx="2" fill="currentColor"/>
         <rect x="0" y="80" width="82" height="10" rx="2" fill="currentColor"/>
       </svg>
+      <span class="logo">AHOY!</span>
     </div>
-    <div class="logo">AHOY!</div>
+    <div style="height:1.25rem"></div>
+    <div class="headline">Your Agents.<br/>One Number.</div>
     <p class="subtitle">
-      One phone number per human.<br/>All your agents share it.
+      Verify once with World&nbsp;ID. Every agent<br/>you deploy gets the same phone number.
     </p>
-    <div class="pills">
-      <div class="pill"><b>SMS</b>Receive texts</div>
-      <div class="pill"><b>Voice</b>AI answers calls</div>
-      <div class="pill"><b>XMTP</b>Bridge to web3</div>
+    <div class="bubbles">
+      <div class="bubble bubble-call">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <span>Calls answered by AI</span>
+      </div>
+      <div class="bubble bubble-sms">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Texts in your inbox</span>
+      </div>
+      <div class="bubble bubble-xmtp">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+        <span>Messages bridged to XMTP</span>
+      </div>
     </div>
     <div class="spacer"></div>
     <button id="btn-verify" class="btn btn-primary"><span class="btn-text">Sign in with World ID</span></button>
@@ -338,11 +353,22 @@
   <!-- Screen 2: Pay -->
   <div id="screen-pay" class="screen">
     <div class="spacer"></div>
-    <div class="logo" style="font-size:2rem">AHOY!</div>
+    <div class="logo-row">
+      <svg width="16" height="16" viewBox="0 0 82 110" fill="none">
+        <path d="M41 0C18.36 0 0 18.36 0 41v68h10V41c0-17.09 13.91-31 31-31s31 13.91 31 31v68h10V41C82 18.36 63.64 0 41 0z" fill="currentColor"/>
+        <rect x="28" y="30" width="10" height="38" rx="2" fill="currentColor"/>
+        <rect x="44" y="30" width="10" height="38" rx="2" fill="currentColor"/>
+        <rect x="0" y="80" width="82" height="10" rx="2" fill="currentColor"/>
+      </svg>
+      <span class="logo">AHOY!</span>
+    </div>
+    <div style="height:0.75rem"></div>
     <p class="subtitle">Verified. Choose how to pay.</p>
     <div class="pay-options">
       <div id="btn-pay-wld" class="pay-option">
-        <div class="pay-token">&#127760;</div>
+        <div class="pay-icon pay-icon-wld">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
         <div class="pay-details">
           <div class="pay-amount">0.5 WLD</div>
           <div class="pay-desc">World token</div>
@@ -350,7 +376,9 @@
         <div class="pay-arrow">&rsaquo;</div>
       </div>
       <div id="btn-pay-usdc" class="pay-option">
-        <div class="pay-token">&#128176;</div>
+        <div class="pay-icon pay-icon-usdc">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
         <div class="pay-details">
           <div class="pay-amount">$0.10 USDC</div>
           <div class="pay-desc">Stablecoin</div>
@@ -366,9 +394,23 @@
   <div id="screen-number" class="screen">
     <div id="copied-toast" class="copied-toast" style="position:fixed;bottom:2rem;left:50%;transform:translateX(-50%)">Copied!</div>
 
-    <div class="inbox-header">
-      <span class="label" style="width:auto">Inbox</span>
+    <div class="inbox-header" style="width:100%">
+      <div class="logo-row">
+        <svg width="14" height="14" viewBox="0 0 82 110" fill="none">
+          <path d="M41 0C18.36 0 0 18.36 0 41v68h10V41c0-17.09 13.91-31 31-31s31 13.91 31 31v68h10V41C82 18.36 63.64 0 41 0z" fill="currentColor"/>
+          <rect x="28" y="30" width="10" height="38" rx="2" fill="currentColor"/>
+          <rect x="44" y="30" width="10" height="38" rx="2" fill="currentColor"/>
+          <rect x="0" y="80" width="82" height="10" rx="2" fill="currentColor"/>
+        </svg>
+        <span class="logo" style="font-size:0.95rem">AHOY!</span>
+      </div>
       <button id="btn-refresh" class="btn btn-outline btn-sm"><span class="btn-text">Refresh</span></button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="width:100%;display:flex;justify-content:space-between;align-items:center">
+      <span class="label" style="width:auto">Inbox</span>
     </div>
     <div id="inbox-list" class="inbox">
       <div class="empty">No messages yet.<br/>Text your number to see them here.</div>
@@ -383,7 +425,7 @@
     </div>
     <div class="section-content" id="numbers-section">
       <div id="numbers-list" style="width:100%;display:flex;flex-direction:column;gap:0.5rem"></div>
-      <button id="btn-provision-new" class="btn btn-outline" style="font-size:0.85rem;padding:0.7rem;display:none"><span class="btn-text">+ Provision New Number</span></button>
+      <button id="btn-provision-new" class="btn btn-outline" style="font-size:0.85rem;padding:0.75rem;display:none"><span class="btn-text">+ Provision New Number</span></button>
     </div>
 
     <div class="divider"></div>
@@ -405,18 +447,18 @@
         <span class="config-label">API Endpoint</span>
         <span class="config-value" id="cfg-api-val"></span>
       </div>
-      <button id="btn-copy-config" class="btn btn-outline" style="font-size:0.8rem;padding:0.6rem;margin-top:0.25rem"><span class="btn-text">Copy Agent Config</span></button>
+      <button id="btn-copy-config" class="btn btn-outline" style="font-size:0.85rem;padding:0.65rem;margin-top:0.25rem"><span class="btn-text">Copy Agent Config</span></button>
     </div>
 
   </div>
 
   <script>
-    // Theme: respect system preference
-    (function() {
-      var dark = localStorage.getItem('theme') === 'dark' ||
-        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      if (dark) document.documentElement.classList.add('dark');
-    })();
+    // Enable transitions after first paint
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        document.documentElement.classList.add('loaded');
+      });
+    });
   </script>
   <script type="module" src="/app.js"></script>
 </body>
