@@ -41,7 +41,7 @@ POST https://useahoy.app/oneshot/:id/call
 POST https://useahoy.app/oneshot/:id/release
 ```
 
-### Option B: Persistent number (World ID required, $0.99)
+### Option B: Persistent number (World ID required, $3.99/month)
 
 ```bash
 # 1. Provision a sybil-resistant number
@@ -75,7 +75,7 @@ WARNING: This is a proof of concept. Service may be unstable. Use at your own ri
 - **One-shot (no World ID):**
   - Oneshot session (5 min temp number): $0.99
 - **Persistent (World ID required):**
-  - Provision: $0.99 (1 free for verified humans)
+  - Provision: $3.99/month (1 free month for AgentKit verified humans)
   - Verify phone: $0.01
   - Renew (30 days): $3.99
 - **Free (AgentKit auth only):**
@@ -134,8 +134,8 @@ All incoming SMS will be forwarded to your XMTP address as DMs.
 
 | Method | Path | Price | Description |
 |---|---|---|---|
-| `POST` | `/provision` | $0.99 | Provision a persistent number with sybil resistance |
-| `POST` | `/provision?notify=xmtp` | $0.99 | Same + registers wallet for XMTP SMS forwarding |
+| `POST` | `/provision` | $3.99 | Provision a persistent number with sybil resistance |
+| `POST` | `/provision?notify=xmtp` | $3.99 | Same + registers wallet for XMTP SMS forwarding |
 | `POST` | `/renew` | $3.99 | Extend billing 30 days |
 
 ### Free (AgentKit auth only)
@@ -188,7 +188,7 @@ GET https://useahoy.app/openapi.json
 
 ```
 1. Agent calls POST /oneshot
-2. x402: agent pays $0.99 USDC on Base
+2. x402: agent pays $3.99 USDC on Base
 3. ahoy provisions a temp Twilio number
 4. Returns: { id: "abc", phoneNumber: "+14155551234", endpoints: {...} }
 5. Agent sends SMS: POST /oneshot/abc/send { to: "+1555...", message: "hello" }
@@ -200,7 +200,7 @@ GET https://useahoy.app/openapi.json
 
 ```
 1. Agent wallet 0xAAA calls POST /provision
-2. x402: agent pays $0.99 USDC on Base
+2. x402: agent pays $3.99 USDC on Base
 3. AgentKit: verifies wallet -> resolves to humanId via World ID
 4. ahoy: checks if human already has a number
 5. ahoy: provisions Twilio number with SMS + voice webhooks

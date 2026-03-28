@@ -68,7 +68,7 @@ graph TB
 
     subgraph "Mini App Flow"
         USER[Human in World App] -->|World ID verify| WID[World ID Verify]
-        WID -->|nullifier_hash = humanId| PAY[Pay $0.99 USDC]
+        WID -->|nullifier_hash = humanId| PAY[Pay $3.99 USDC]
         PAY --> PROV
     end
 
@@ -324,8 +324,8 @@ Agents using [AgentCash](https://agentcash.dev) can call ahoy endpoints directly
 | `POST` | `/oneshot/:id/call` | free (session) | Make TTS call from temp number |
 | `POST` | `/oneshot/:id/release` | free (session) | Release early |
 | `GET` | `/verify-phone?phone=+1..` | x402 ($0.01) | Check if phone is backed by verified human |
-| `POST` | `/provision` | x402 + AgentKit ($0.99) | Provision persistent number (World ID required) |
-| `POST` | `/provision?notify=xmtp` | x402 + AgentKit ($0.99) | Same + XMTP forwarding |
+| `POST` | `/provision` | x402 + AgentKit ($3.99) | Provision persistent number (World ID required) |
+| `POST` | `/provision?notify=xmtp` | x402 + AgentKit ($3.99) | Same + XMTP forwarding |
 | `POST` | `/renew` | x402 + AgentKit ($3.99) | Extend billing 30 days |
 | `GET` | `/number` | AgentKit (free) | Get assigned number |
 | `GET` | `/messages` | AgentKit (free) | Read SMS inbox |

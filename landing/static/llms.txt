@@ -25,9 +25,9 @@ POST https://useahoy.app/oneshot/:id/call    { "to": "+15551234567", "message": 
 POST https://useahoy.app/oneshot/:id/release
 ```
 
-### Persistent number (World ID required, $0.99)
+### Persistent number (World ID required, $3.99/month)
 
-Pay $0.99 via x402 + sign with AgentKit (proof-of-human). Get a permanent US number with 30-day billing, AI voice, XMTP bridge. 1 number per human, shared across all agents.
+Pay $3.99 via x402 + sign with AgentKit (proof-of-human). Get a permanent US number with 30-day billing, AI voice, XMTP bridge. 1 number per human, shared across all agents.
 
 ```
 POST https://useahoy.app/provision              → { phoneNumber, provisioned: true }
@@ -54,7 +54,7 @@ POST https://useahoy.app/renew                   → { renewed: true }
 
 | Method | Path | Price | Auth | Description |
 |--------|------|-------|------|-------------|
-| POST | /provision | $0.99 | x402 + AgentKit | Provision a number (1 free trial) |
+| POST | /provision | $3.99 | x402 + AgentKit | Provision a number (1 free month for AgentKit) |
 | POST | /renew | $3.99 | x402 + AgentKit | Extend billing 30 days |
 | GET | /verify-phone?phone=+1... | $0.01 | x402 | Check if phone is human-backed |
 

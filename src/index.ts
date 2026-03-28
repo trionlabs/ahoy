@@ -119,8 +119,8 @@ const hooks = createAgentkitHooks({
 const routes = {
   "POST /provision": {
     accepts: [
-      { scheme: "exact" as const, price: "$0.99", network: WORLD_CHAIN, payTo: PAY_TO },
-      { scheme: "exact" as const, price: "$0.99", network: BASE_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$3.99", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$3.99", network: BASE_CHAIN, payTo: PAY_TO },
     ],
     extensions: {
       ...declareAgentkitExtension({
@@ -305,7 +305,7 @@ app.get("/openapi.json", (c) => {
         post: {
           summary: "Provision a phone number",
           description: "Get a sybil-resistant phone number backed by World ID. Free trial for verified humans.",
-          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "0.99" },
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "3.99" },
           parameters: [
             { name: "notify", in: "query", schema: { type: "string", enum: ["xmtp", "api"] }, description: "SMS delivery: xmtp (forwarded via XMTP) or api (poll /messages)" },
           ],

@@ -460,11 +460,11 @@ async function payWithBrowserWallet(payTo: string): Promise<string> {
     }
   }
 
-  // Encode ERC-20 transfer(address, uint256) — $0.99 USDC = 990000 (6 decimals)
+  // Encode ERC-20 transfer(address, uint256) — $3.99 USDC = 3990000 (6 decimals)
   setPayStatus("Confirm in your wallet...");
   const selector = "0xa9059cbb";
   const paddedTo = payTo.slice(2).toLowerCase().padStart(64, "0");
-  const paddedAmount = (990000).toString(16).padStart(64, "0");
+  const paddedAmount = (3990000).toString(16).padStart(64, "0");
   const data = selector + paddedTo + paddedAmount;
 
   const txHash: string = await ethereum.request({
@@ -508,7 +508,7 @@ async function doPay(token: "wld" | "usdc") {
         tokens: [
           {
             symbol: Tokens.USDC,
-            token_amount: tokenToDecimals(0.99, Tokens.USDC).toString(),
+            token_amount: tokenToDecimals(3.99, Tokens.USDC).toString(),
           },
         ],
         description: "Ahoy - phone number provisioning",
