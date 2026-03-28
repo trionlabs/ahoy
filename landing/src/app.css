@@ -91,37 +91,21 @@ body::after {
   line-height: 1.4;
 }
 
-/* Tail on first bubble */
-.bubble-tail::before {
-  content: '';
-  position: absolute;
-  left: -4px;
-  top: 6px;
-  width: 8px;
-  height: 8px;
-  border-radius: 0 0 0 6px;
-  transform: rotate(45deg);
-}
-
 .bubble-call {
   background: #E8F5E9;
   color: #1B5E20;
-  border-bottom-left-radius: 0.25rem;
 }
-.bubble-call.bubble-tail::before { background: #E8F5E9; }
 .bubble-call .bubble-icon { color: #43A047; }
 
 .bubble-sms {
   background: #E3F2FD;
   color: #0D47A1;
-  border-bottom-left-radius: 0.25rem;
 }
 .bubble-sms .bubble-icon { color: #1E88E5; }
 
 .bubble-xmtp {
   background: #EDE7F6;
   color: #4A148C;
-  border-bottom-left-radius: 0.25rem;
 }
 .bubble-xmtp .bubble-icon { color: #7E57C2; }
 
@@ -130,7 +114,6 @@ body::after {
   background: #1B3A1E;
   color: #A5D6A7;
 }
-.dark .bubble-call.bubble-tail::before { background: #1B3A1E; }
 .dark .bubble-call .bubble-icon { color: #66BB6A; }
 
 .dark .bubble-sms {
