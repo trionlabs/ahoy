@@ -20,35 +20,52 @@ curl -s https://raw.githubusercontent.com/trionlabs/ahoy/main/SKILL.md
 
 ## Quick Start
 
+### Option A: One-shot (no World ID, $2.00)
+
 ```bash
-# 1. Provision a number (x402 payment on World Chain or Base)
-POST https://useahoy.app/provision
-# Returns: { numbers: [...], provisioned: true }
-# If you already have numbers, returns them without provisioning a new one.
+# 1. Get a temp number for 5 minutes
+POST https://useahoy.app/oneshot
+# Returns: { id, phoneNumber, endpoints: { send, inbox, call, release } }
 
-# 2. Enable XMTP forwarding (re-call provision with ?notify=xmtp)
-POST https://useahoy.app/provision?notify=xmtp
-# Returns existing numbers + registers your wallet for XMTP SMS forwarding.
-# No new number provisioned. Secure - uses AgentKit wallet verification.
+# 2. Send SMS from your temp number
+POST https://useahoy.app/oneshot/:id/send
+{ "to": "+15551234567", "message": "Hello from ahoy" }
 
-# 3. Check your numbers (free, AgentKit auth only)
-GET https://useahoy.app/number
+# 3. Read received SMS
+GET https://useahoy.app/oneshot/:id/inbox
 
-# 4. Read SMS inbox (free, AgentKit auth only)
-GET https://useahoy.app/messages
+# 4. Make a TTS call
+POST https://useahoy.app/oneshot/:id/call
+{ "to": "+15551234567", "message": "Hello, this is ahoy" }
 
-# 5. Check billing status (free, AgentKit auth only)
-GET https://useahoy.app/status
-
-# 6. Verify a phone number is backed by a real human (x402 paid)
-GET https://useahoy.app/verify-phone?phone=+14155551234
-
-# 7. Renew for 30 more days (x402 paid)
-POST https://useahoy.app/renew
+# 5. Release early (or wait 5 min for auto-release)
+POST https://useahoy.app/oneshot/:id/release
 ```
 
-Paid endpoints use x402 (USDC on World Chain or Base). Free endpoints require AgentKit auth only.
-Verified humans get 1 free provision via AgentKit free-trial.
+### Option B: Persistent number (World ID required, $0.10)
+
+```bash
+# 1. Provision a sybil-resistant number
+POST https://useahoy.app/provision
+
+# 2. Enable XMTP forwarding
+POST https://useahoy.app/provision?notify=xmtp
+
+# 3. Check your numbers (free)
+GET https://useahoy.app/number
+
+# 4. Read SMS inbox (free)
+GET https://useahoy.app/messages
+
+# 5. Check billing status (free)
+GET https://useahoy.app/status
+
+# 6. Verify a phone is backed by a verified human
+GET https://useahoy.app/verify-phone?phone=+14155551234
+
+# 7. Renew for 30 more days
+POST https://useahoy.app/renew
+```
 
 WARNING: This is a proof of concept. Service may be unstable. Use at your own risk.
 
@@ -56,7 +73,9 @@ WARNING: This is a proof of concept. Service may be unstable. Use at your own ri
 
 - **Network:** World Chain (eip155:480) or Base (eip155:8453)
 - **Token:** USDC
-- **Paid (x402):**
+- **One-shot (no World ID):**
+  - Oneshot session (5 min temp number): $2.00
+- **Persistent (World ID required):**
   - Provision: $0.10 (1 free for verified humans)
   - Verify phone: $0.01
   - Renew (30 days): $0.10
@@ -101,11 +120,15 @@ All incoming SMS will be forwarded to your XMTP address as DMs.
 
 ## API Reference
 
-### Paid (x402 only, no World ID needed)
+### One-shot (x402 only, no World ID needed)
 
 | Method | Path | Price | Description |
 |---|---|---|---|
-| `POST` | `/oneshot` | $2.00 | Get a temp number for 5 min. Send SMS, receive SMS, make calls — all included. |
+| `POST` | `/oneshot` | $2.00 | Get a temp number for 5 min |
+| `POST` | `/oneshot/:id/send` | free | Send SMS from temp number |
+| `GET` | `/oneshot/:id/inbox` | free | Read received SMS |
+| `POST` | `/oneshot/:id/call` | free | Make TTS call from temp number |
+| `POST` | `/oneshot/:id/release` | free | Release early |
 | `GET` | `/verify-phone?phone=+1...` | $0.01 | Check if a phone is backed by a verified human |
 
 ### Paid (x402 + AgentKit, World ID required)
@@ -162,17 +185,29 @@ GET https://useahoy.app/openapi.json
 - **x402 Bazaar** discovery extension on all paid endpoints
 - **AgentKit** free-trial for verified humans (1 free provision)
 
-## Example: Agent Provisions a Number
+## Example: One-shot (no World ID)
+
+```
+1. Agent calls POST /oneshot
+2. x402: agent pays $2.00 USDC on Base
+3. ahoy provisions a temp Twilio number
+4. Returns: { id: "abc", phoneNumber: "+14155551234", endpoints: {...} }
+5. Agent sends SMS: POST /oneshot/abc/send { to: "+1555...", message: "hello" }
+6. Agent checks inbox: GET /oneshot/abc/inbox
+7. After 5 min: number auto-releases from Twilio
+```
+
+## Example: Persistent number (World ID)
 
 ```
 1. Agent wallet 0xAAA calls POST /provision
-2. x402 middleware: agent pays $0.10 USDC on Base
+2. x402: agent pays $0.10 USDC on Base
 3. AgentKit: verifies wallet -> resolves to humanId via World ID
 4. ahoy: checks quota (< 5 numbers?)
 5. ahoy: provisions Twilio number with SMS + voice webhooks
 6. ahoy: creates EAS attestation on World Chain
-7. Returns: { phoneNumber: "+14155551234", provisioned: true }
-8. Someone texts +14155551234 -> stored in inbox
+7. Returns: { numbers: [...], provisioned: true }
+8. Someone texts the number -> stored in inbox
 9. Agent reads via GET /messages or receives via XMTP
-10. Someone calls +14155551234 -> AI assistant answers (Claude)
+10. Someone calls the number -> AI assistant answers (Claude)
 ```

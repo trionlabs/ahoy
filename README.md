@@ -299,7 +299,11 @@ Open `http://localhost:4021/app` in a browser (dev mode) or in World App (produc
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `POST` | `/oneshot` | x402 ($2.00) | Get temp number for 5 min — send SMS, receive SMS, make calls (no World ID) |
+| `POST` | `/oneshot` | x402 ($2.00) | Get temp number for 5 min (no World ID) |
+| `POST` | `/oneshot/:id/send` | free (session) | Send SMS from temp number |
+| `GET` | `/oneshot/:id/inbox` | free (session) | Read received SMS |
+| `POST` | `/oneshot/:id/call` | free (session) | Make TTS call from temp number |
+| `POST` | `/oneshot/:id/release` | free (session) | Release early |
 | `GET` | `/verify-phone?phone=+1..` | x402 ($0.01) | Check if phone is backed by verified human |
 | `POST` | `/provision` | x402 + AgentKit ($0.10) | Provision persistent number (World ID required) |
 | `POST` | `/provision?notify=xmtp` | x402 + AgentKit ($0.10) | Same + XMTP forwarding |
