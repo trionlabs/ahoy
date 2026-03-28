@@ -188,7 +188,6 @@ DM the ahoy XMTP bot to control your number:
 
 | Command | Description |
 |---|---|
-| `/register <humanId>` | Link your XMTP address to a provisioned number |
 | `/dm <+phone> <message>` | Send SMS from your ahoy number |
 | `/inbox` | Read recent SMS messages |
 | `/status` | Check registration |

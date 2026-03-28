@@ -76,7 +76,6 @@ DM the ahoy XMTP bot to bridge SMS and decentralized messaging:
 
 | Command | Description |
 |---|---|
-| `/register <humanId>` | Link your XMTP address to your ahoy number |
 | `/dm <+phone> <message>` | Send SMS from your ahoy number |
 | `/inbox` | Read recent SMS messages |
 | `/status` | Check registration |

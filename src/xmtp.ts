@@ -5,11 +5,13 @@
  * Agent sends XMTP message -> sent as SMS from ahoy number
  *
  * Commands (via XMTP DM to the ahoy agent):
- *   /register <humanId>         - link your XMTP address to a provisioned number
  *   /dm <+phone> <message>      - send SMS from your ahoy number
  *   /inbox                      - read recent SMS messages
  *   /status                     - check your registration
  *   /help                       - show available commands
+ *
+ * Registration is automatic via POST /provision?notify=xmtp (AgentKit verified).
+ * Manual /register was removed to prevent humanId hijacking.
  */
 
 import { Agent, IdentifierKind, getTestUrl } from "@xmtp/agent-sdk";
@@ -52,23 +54,6 @@ export async function initXmtp(): Promise<void> {
     if (!senderAddress) return;
     const text = (ctx.message.content as string).trim();
     const cmd = text.toLowerCase();
-
-    // /register <humanId>
-    if (cmd.startsWith("/register ")) {
-      const humanId = text.slice(10).trim();
-      const phone = getNumberByHuman(humanId);
-      if (!phone) {
-        await ctx.conversation.sendText(
-          "No number found for that humanId. Provision one first via POST /provision.",
-        );
-        return;
-      }
-      registerXmtpSubscriber(humanId, senderAddress);
-      await ctx.conversation.sendText(
-        `Registered! SMS to ${phone} will be forwarded here.\nUse /dm to send SMS.`,
-      );
-      return;
-    }
 
     // /dm <+phone> <message>
     if (cmd.startsWith("/dm ")) {
@@ -132,11 +117,12 @@ export async function initXmtp(): Promise<void> {
     // /help or unknown
     await ctx.conversation.sendText(
       "ahoy XMTP Bridge\n\n" +
-        "/register <humanId> - link to your ahoy number\n" +
         "/dm <+phone> <msg> - send SMS\n" +
         "/inbox - read recent SMS\n" +
         "/status - check registration\n" +
-        "/help - show this message",
+        "/help - show this message\n\n" +
+        "To enable XMTP forwarding, provision with:\n" +
+        "POST /provision?notify=xmtp",
     );
   });
 
