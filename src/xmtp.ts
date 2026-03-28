@@ -16,18 +16,22 @@
 
 import { Agent, IdentifierKind, getTestUrl } from "@xmtp/agent-sdk";
 import { sendSms } from "./twilio.js";
-import { getNumberByHuman, getMessages } from "./storage.js";
+import { getNumberByHuman, getMessages, loadXmtpSubscribers, saveXmtpSubscriber } from "./storage.js";
 
 let agent: Agent | null = null;
 
-// humanId -> Set of XMTP wallet addresses (all agents for this human)
-const xmtpSubscribers = new Map<string, Set<string>>();
+// humanId -> Set of XMTP wallet addresses (loaded from SQLite on startup)
+const xmtpSubscribers = loadXmtpSubscribers();
 // reverse: XMTP address -> humanId
 const addressToHuman = new Map<string, string>();
+// Build reverse map from loaded data
+for (const [humanId, addrs] of xmtpSubscribers) {
+  for (const addr of addrs) addressToHuman.set(addr, humanId);
+}
 
 /**
  * Auto-register an agent's wallet for XMTP forwarding.
- * Multiple agents per human are supported — all get forwarded SMS.
+ * Persisted in SQLite — survives restarts.
  */
 export function registerXmtpSubscriber(humanId: string, walletAddress: string): void {
   const addr = walletAddress.toLowerCase();
@@ -35,6 +39,7 @@ export function registerXmtpSubscriber(humanId: string, walletAddress: string): 
     xmtpSubscribers.set(humanId, new Set());
   }
   xmtpSubscribers.get(humanId)!.add(addr);
+  saveXmtpSubscriber(humanId, addr);
   addressToHuman.set(addr, humanId);
   console.log(`[xmtp] registered ${humanId} -> ${addr} (${xmtpSubscribers.get(humanId)!.size} agents)`);
 }

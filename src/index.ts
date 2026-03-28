@@ -15,7 +15,6 @@ import {
   createAgentBookVerifier,
   createAgentkitHooks,
   declareAgentkitExtension,
-  InMemoryAgentKitStorage,
   parseAgentkitHeader,
   verifyAgentkitSignature,
 } from "@worldcoin/agentkit";
@@ -33,6 +32,9 @@ import {
   addMessage,
   getMessages,
   suspendNumberById,
+  SqliteAgentKitStorage,
+  loadXmtpSubscribers,
+  saveXmtpSubscriber,
   releaseNumberById,
   extendBillingById,
   MAX_NUMBERS,
@@ -102,7 +104,7 @@ const evmScheme = new ExactEvmScheme().registerMoneyParser(
 
 // --- AgentKit ---
 const agentBook = createAgentBookVerifier({ network: "world" });
-const agentkitStorage = new InMemoryAgentKitStorage();
+const agentkitStorage = new SqliteAgentKitStorage();
 
 const hooks = createAgentkitHooks({
   agentBook,

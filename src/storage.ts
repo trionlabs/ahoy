@@ -63,6 +63,24 @@ db.exec(`
     paid_until INTEGER NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS agentkit_usage (
+    endpoint TEXT NOT NULL,
+    human_id TEXT NOT NULL,
+    count INTEGER DEFAULT 0,
+    PRIMARY KEY (endpoint, human_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS agentkit_nonces (
+    nonce TEXT PRIMARY KEY,
+    created_at INTEGER DEFAULT (unixepoch())
+  );
+
+  CREATE TABLE IF NOT EXISTS xmtp_subscribers (
+    human_id TEXT NOT NULL,
+    wallet_address TEXT NOT NULL,
+    PRIMARY KEY (human_id, wallet_address)
+  );
+
   CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     human_id TEXT NOT NULL,
@@ -293,4 +311,60 @@ export function getMessages(humanId: string): SmsMessage[] {
     sid: r.sid || "",
     receivedAt: new Date(r.received_at * 1000),
   }));
+}
+
+// --- AgentKit persistent storage ---
+import type { AgentKitStorage } from "@worldcoin/agentkit";
+
+const stmtGetUsage = db.prepare(
+  "SELECT count FROM agentkit_usage WHERE endpoint = ? AND human_id = ?",
+);
+const stmtUpsertUsage = db.prepare(
+  "INSERT INTO agentkit_usage (endpoint, human_id, count) VALUES (?, ?, 1) ON CONFLICT(endpoint, human_id) DO UPDATE SET count = count + 1",
+);
+const stmtHasNonce = db.prepare(
+  "SELECT 1 FROM agentkit_nonces WHERE nonce = ?",
+);
+const stmtInsertNonce = db.prepare(
+  "INSERT OR IGNORE INTO agentkit_nonces (nonce) VALUES (?)",
+);
+
+export class SqliteAgentKitStorage implements AgentKitStorage {
+  async getUsageCount(endpoint: string, humanId: string): Promise<number> {
+    const row = stmtGetUsage.get(endpoint, humanId) as { count: number } | undefined;
+    return row?.count ?? 0;
+  }
+  async incrementUsage(endpoint: string, humanId: string): Promise<void> {
+    stmtUpsertUsage.run(endpoint, humanId);
+  }
+  async hasUsedNonce(nonce: string): Promise<boolean> {
+    return !!stmtHasNonce.get(nonce);
+  }
+  async recordNonce(nonce: string): Promise<void> {
+    stmtInsertNonce.run(nonce);
+  }
+}
+
+// --- XMTP subscriber persistence ---
+
+const stmtGetXmtpSubs = db.prepare(
+  "SELECT human_id, wallet_address FROM xmtp_subscribers",
+);
+const stmtUpsertXmtpSub = db.prepare(
+  "INSERT OR IGNORE INTO xmtp_subscribers (human_id, wallet_address) VALUES (?, ?)",
+);
+
+export function loadXmtpSubscribers(): Map<string, Set<string>> {
+  const subs = new Map<string, Set<string>>();
+  const rows = stmtGetXmtpSubs.all() as Array<{ human_id: string; wallet_address: string }>;
+  for (const row of rows) {
+    if (!subs.has(row.human_id)) subs.set(row.human_id, new Set());
+    subs.get(row.human_id)!.add(row.wallet_address);
+  }
+  console.log(`[storage] loaded ${rows.length} XMTP subscribers from db`);
+  return subs;
+}
+
+export function saveXmtpSubscriber(humanId: string, walletAddress: string): void {
+  stmtUpsertXmtpSub.run(humanId, walletAddress.toLowerCase());
 }
