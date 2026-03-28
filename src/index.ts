@@ -554,6 +554,22 @@ app.get("/verify-phone", (c) => {
   });
 });
 
+// --- Content filter ---
+import { readFileSync, existsSync } from "node:fs";
+const badwordsPath = new URL("../badwords.json", import.meta.url).pathname;
+let badwords: string[] = [];
+try {
+  if (existsSync(badwordsPath)) {
+    badwords = JSON.parse(readFileSync(badwordsPath, "utf-8"));
+    console.log(`[filter] loaded ${badwords.length} blocked words`);
+  }
+} catch { /* no badwords file */ }
+
+function containsBadWords(text: string): boolean {
+  const lower = text.toLowerCase();
+  return badwords.some((w) => lower.includes(w.toLowerCase()));
+}
+
 // --- One-shot endpoints (x402 only, no World ID) ---
 const SHARED_NUMBER = process.env.AHOY_SHARED_NUMBER || "";
 
@@ -561,6 +577,7 @@ const SHARED_NUMBER = process.env.AHOY_SHARED_NUMBER || "";
 app.post("/sms/send", async (c) => {
   const { to, message } = (await c.req.json()) as { to: string; message: string };
   if (!to || !message) return c.json({ error: "Missing to or message" }, 400);
+  if (containsBadWords(message)) return c.json({ error: "Message contains prohibited content" }, 400);
   if (!SHARED_NUMBER) return c.json({ error: "No shared number configured" }, 503);
   try {
     const result = await sendSms(SHARED_NUMBER, to, message);
@@ -628,6 +645,7 @@ app.get("/sms/receive/:id", async (c) => {
 app.post("/call/tts", async (c) => {
   const { to, message, voice } = (await c.req.json()) as { to: string; message: string; voice?: string };
   if (!to || !message) return c.json({ error: "Missing to or message" }, 400);
+  if (containsBadWords(message)) return c.json({ error: "Message contains prohibited content" }, 400);
   if (!SHARED_NUMBER) return c.json({ error: "No shared number configured" }, 503);
   try {
     const call = await makeCall(SHARED_NUMBER, to, message, voice || "Polly.Joanna");
