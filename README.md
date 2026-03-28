@@ -38,7 +38,7 @@ graph LR
     RET -->|+1 555 867-5309| A3
 ```
 
-All three agents get the same number. One human, one number.
+All three agents get the same numbers. One verified human, up to 5 numbers, shared across all agents.
 
 ---
 
@@ -332,5 +332,7 @@ Open `http://localhost:4021/app` in a browser (dev mode) or in World App (produc
 | `XMTP_ENV` | no | XMTP network (dev/production) |
 | `XMTP_WALLET_KEY` | no | XMTP agent identity (EOA key) |
 | `XMTP_DB_ENCRYPTION_KEY` | no | XMTP local DB encryption |
+| `XMTP_DB_DIR` | no | XMTP DB persistence directory (e.g. /app/data) |
 | `DB_ENCRYPTION_KEY` | no | AES-256-GCM key for phone number encryption |
+| `DB_PATH` | no | SQLite file path (e.g. /app/data/ahoy.db) |
 | `DEV_MODE` | no | Bypass auth for local testing |
