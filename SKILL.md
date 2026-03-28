@@ -20,7 +20,7 @@ curl -s https://raw.githubusercontent.com/trionlabs/ahoy/main/SKILL.md
 
 ## Quick Start
 
-### Option A: One-shot (no World ID, $2.00)
+### Option A: One-shot (no World ID, $0.99)
 
 ```bash
 # 1. Get a temp number for 5 minutes
@@ -42,7 +42,7 @@ POST https://useahoy.app/oneshot/:id/call
 POST https://useahoy.app/oneshot/:id/release
 ```
 
-### Option B: Persistent number (World ID required, $0.10)
+### Option B: Persistent number (World ID required, $0.99)
 
 ```bash
 # 1. Provision a sybil-resistant number
@@ -74,11 +74,11 @@ WARNING: This is a proof of concept. Service may be unstable. Use at your own ri
 - **Network:** World Chain (eip155:480) or Base (eip155:8453)
 - **Token:** USDC
 - **One-shot (no World ID):**
-  - Oneshot session (5 min temp number): $2.00
+  - Oneshot session (5 min temp number): $0.99
 - **Persistent (World ID required):**
-  - Provision: $0.10 (1 free for verified humans)
+  - Provision: $0.99 (1 free for verified humans)
   - Verify phone: $0.01
-  - Renew (30 days): $0.10
+  - Renew (30 days): $0.99
 - **Free (AgentKit auth only):**
   - Number lookup, inbox, status
 - **Pay to:** ahoy.base.eth (`0x1C66D49FB1e9782Aa838A2Ec9fa6F346C85096E0`)
@@ -124,7 +124,7 @@ All incoming SMS will be forwarded to your XMTP address as DMs.
 
 | Method | Path | Price | Description |
 |---|---|---|---|
-| `POST` | `/oneshot` | $2.00 | Get a temp number for 5 min |
+| `POST` | `/oneshot` | $0.99 | Get a temp number for 5 min |
 | `POST` | `/oneshot/:id/send` | free | Send SMS from temp number |
 | `GET` | `/oneshot/:id/inbox` | free | Read received SMS |
 | `POST` | `/oneshot/:id/call` | free | Make TTS call from temp number |
@@ -135,9 +135,9 @@ All incoming SMS will be forwarded to your XMTP address as DMs.
 
 | Method | Path | Price | Description |
 |---|---|---|---|
-| `POST` | `/provision` | $0.10 | Provision a persistent number with sybil resistance |
-| `POST` | `/provision?notify=xmtp` | $0.10 | Same + registers wallet for XMTP SMS forwarding |
-| `POST` | `/renew` | $0.10 | Extend billing 30 days |
+| `POST` | `/provision` | $0.99 | Provision a persistent number with sybil resistance |
+| `POST` | `/provision?notify=xmtp` | $0.99 | Same + registers wallet for XMTP SMS forwarding |
+| `POST` | `/renew` | $0.99 | Extend billing 30 days |
 
 ### Free (AgentKit auth only)
 
@@ -189,7 +189,7 @@ GET https://useahoy.app/openapi.json
 
 ```
 1. Agent calls POST /oneshot
-2. x402: agent pays $2.00 USDC on Base
+2. x402: agent pays $0.99 USDC on Base
 3. ahoy provisions a temp Twilio number
 4. Returns: { id: "abc", phoneNumber: "+14155551234", endpoints: {...} }
 5. Agent sends SMS: POST /oneshot/abc/send { to: "+1555...", message: "hello" }
@@ -201,7 +201,7 @@ GET https://useahoy.app/openapi.json
 
 ```
 1. Agent wallet 0xAAA calls POST /provision
-2. x402: agent pays $0.10 USDC on Base
+2. x402: agent pays $0.99 USDC on Base
 3. AgentKit: verifies wallet -> resolves to humanId via World ID
 4. ahoy: checks quota (< 5 numbers?)
 5. ahoy: provisions Twilio number with SMS + voice webhooks

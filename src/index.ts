@@ -119,8 +119,8 @@ const hooks = createAgentkitHooks({
 const routes = {
   "POST /provision": {
     accepts: [
-      { scheme: "exact" as const, price: "$0.10", network: WORLD_CHAIN, payTo: PAY_TO },
-      { scheme: "exact" as const, price: "$0.10", network: BASE_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.99", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.99", network: BASE_CHAIN, payTo: PAY_TO },
     ],
     extensions: {
       ...declareAgentkitExtension({
@@ -138,8 +138,8 @@ const routes = {
   },
   "POST /oneshot": {
     accepts: [
-      { scheme: "exact" as const, price: "$2.00", network: WORLD_CHAIN, payTo: PAY_TO },
-      { scheme: "exact" as const, price: "$2.00", network: BASE_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.99", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.99", network: BASE_CHAIN, payTo: PAY_TO },
     ],
     extensions: {
       ...declareDiscoveryExtension({
@@ -175,8 +175,8 @@ const routes = {
   },
   "POST /renew": {
     accepts: [
-      { scheme: "exact" as const, price: "$0.10", network: WORLD_CHAIN, payTo: PAY_TO },
-      { scheme: "exact" as const, price: "$0.10", network: BASE_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.99", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.99", network: BASE_CHAIN, payTo: PAY_TO },
     ],
     extensions: {
       ...declareAgentkitExtension({
@@ -305,7 +305,7 @@ app.get("/openapi.json", (c) => {
         post: {
           summary: "Provision a phone number",
           description: "Get a sybil-resistant phone number backed by World ID. Free trial for verified humans.",
-          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "0.10" },
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "0.99" },
           parameters: [
             { name: "notify", in: "query", schema: { type: "string", enum: ["xmtp", "api"] }, description: "SMS delivery: xmtp (forwarded via XMTP) or api (poll /messages)" },
           ],
@@ -327,7 +327,7 @@ app.get("/openapi.json", (c) => {
         post: {
           summary: "Renew phone number for 30 days",
           description: "Extend your phone number billing for another 30 days. Number is suspended after expiry, released after 7-day grace period.",
-          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "0.10" },
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "0.99" },
           responses: {
             "200": { description: "Renewed", content: { "application/json": { schema: { type: "object", properties: { renewed: { type: "boolean" } } } } } },
             "402": { description: "Payment required" },
@@ -353,8 +353,8 @@ app.get("/openapi.json", (c) => {
       "/oneshot": {
         post: {
           summary: "Get a temp phone number for 5 minutes (no World ID needed)",
-          description: "Pay $2.00 to get a dedicated temp number. Send SMS, receive SMS, make calls — all included. Auto-releases after 5 minutes. Sub-endpoints: /oneshot/:id/send, /oneshot/:id/inbox, /oneshot/:id/call, /oneshot/:id/release",
-          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "2.00" },
+          description: "Pay $0.99 to get a dedicated temp number. Send SMS, receive SMS, make calls — all included. Auto-releases after 5 minutes. Sub-endpoints: /oneshot/:id/send, /oneshot/:id/inbox, /oneshot/:id/call, /oneshot/:id/release",
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "0.99" },
           responses: {
             "200": { description: "Session created", content: { "application/json": { schema: { type: "object", properties: { id: { type: "string" }, phoneNumber: { type: "string" }, expiresIn: { type: "string" }, endpoints: { type: "object" } } } } } },
             "402": { description: "Payment required" },
@@ -561,7 +561,7 @@ setInterval(async () => {
   }
 }, 60 * 1000);
 
-// POST /oneshot — provision a temp number ($2.00, no World ID)
+// POST /oneshot — provision a temp number ($0.99, no World ID)
 app.post("/oneshot", async (c) => {
   if (!(await canProvision())) {
     return c.json({ error: "Service temporarily unavailable" }, 503);
