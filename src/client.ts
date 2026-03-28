@@ -15,15 +15,15 @@ import {
   type PayCommandInput,
 } from "@worldcoin/minikit-js";
 
-// IDKit standalone sets window.IDKit when loaded via script tag
+// IDKit standalone sets window.IDKit + window.IDKitSession
 declare global {
   interface Window {
-    IDKit?: {
-      init: (config: any) => void;
-      open: () => Promise<unknown>;
-      close: () => Promise<unknown>;
-      reset: () => void;
-      isInitialized: boolean;
+    IDKitSession?: {
+      create: (config: any) => Promise<void>;
+      pollStatus: () => Promise<{ state: string; result: any; errorCode: string | null }>;
+      getURI: () => string | null;
+      destroy: () => void;
+      readonly isActive: boolean;
     };
   }
 }
@@ -35,7 +35,7 @@ let phoneNumber: string | null = null;
 let allNumbers: Array<{ id: number; phoneNumber: string; status: string; paidUntil: number }> = [];
 let devMode = false;
 let useIDKit = false;
-let idkitVerifyData: any = null;
+let idkitAppId: string | null = null;
 let inboxInterval: ReturnType<typeof setInterval> | null = null;
 
 // --- DOM helpers ---
@@ -87,42 +87,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (miniKitReady) {
     // In World App — use MiniKit
-  } else if (appId && window.IDKit) {
-    // Regular browser with app_id — use IDKit for World ID verification
+  } else if (appId && window.IDKitSession) {
+    // Regular browser — use IDKitSession API with custom QR code
     useIDKit = true;
-    window.IDKit.init({
-      app_id: appId as `app_${string}`,
-      action: "provision-number",
-      verification_level: "device",
-      handleVerify: async (proof: any) => {
-        const res = await fetch("/app/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ payload: proof, action: "provision-number" }),
-        });
-        idkitVerifyData = await res.json();
-        if (!idkitVerifyData.humanId) {
-          throw new Error(idkitVerifyData.error || "Verification failed");
-        }
-      },
-      onSuccess: () => {
-        humanId = idkitVerifyData.humanId;
-        sessionToken = idkitVerifyData.sessionToken || null;
-        allNumbers = idkitVerifyData.numbers || [];
-
-        setBtnLoading("btn-verify", false);
-        if (idkitVerifyData.needsPayment) {
-          $("pay-desc").textContent = "USDC on Base via browser wallet";
-          showScreen("screen-pay");
-        } else if (allNumbers.length > 0) {
-          phoneNumber = allNumbers[0].phoneNumber;
-          showNumberScreen();
-        } else {
-          $("pay-desc").textContent = "USDC on Base via browser wallet";
-          showScreen("screen-pay");
-        }
-      },
-    });
+    idkitAppId = appId;
   } else {
     // No app_id or no IDKit script — dev mode
     devMode = true;
@@ -261,13 +229,9 @@ async function doVerify() {
   setBtnLoading("btn-verify", true);
 
   try {
-    // IDKit: open the modal, callbacks handle the rest
-    if (useIDKit && window.IDKit) {
-      setStatus("Scan QR code with World App", "info");
-      window.IDKit.open().catch(() => {
-        setBtnLoading("btn-verify", false);
-        setStatus("", "info");
-      });
+    // IDKit Session: custom QR code modal
+    if (useIDKit && window.IDKitSession && idkitAppId) {
+      await doVerifyWithIDKit(idkitAppId);
       return;
     }
 
@@ -344,6 +308,115 @@ async function doVerify() {
   } catch (e) {
     setStatus(`Something went wrong. Try again.`, "error");
     setBtnLoading("btn-verify", false);
+  }
+}
+
+// --- IDKit Session verification (QR code for desktop, deep link for mobile) ---
+async function doVerifyWithIDKit(appId: string) {
+  const overlay = $("qr-overlay");
+  const qrImg = $("qr-code") as HTMLImageElement;
+  const deeplink = $("qr-deeplink") as HTMLAnchorElement;
+  const cancelBtn = $("qr-cancel");
+  const qrStatus = $("qr-status");
+
+  try {
+    setStatus("Creating verification session...", "info");
+
+    await window.IDKitSession!.create({
+      app_id: appId,
+      action: "provision-number",
+      verification_level: "device",
+    });
+
+    const uri = window.IDKitSession!.getURI();
+    if (!uri) {
+      setStatus("Failed to create session. Try again.", "error");
+      setBtnLoading("btn-verify", false);
+      return;
+    }
+
+    // Show QR modal
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(uri)}&bgcolor=FFFFFF`;
+    qrImg.style.display = "block";
+
+    // Deep link for mobile
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      deeplink.href = uri;
+      deeplink.style.display = "block";
+      qrImg.style.display = "none"; // Hide QR on mobile, show deep link
+    } else {
+      deeplink.style.display = "none";
+    }
+
+    qrStatus.textContent = "Waiting for verification...";
+    overlay.classList.add("active");
+
+    // Cancel handler
+    let cancelled = false;
+    const cancelHandler = () => {
+      cancelled = true;
+      overlay.classList.remove("active");
+      try { window.IDKitSession!.destroy(); } catch {}
+      setBtnLoading("btn-verify", false);
+      setStatus("", "info");
+    };
+    cancelBtn.addEventListener("click", cancelHandler, { once: true });
+
+    // Poll for result
+    while (!cancelled) {
+      const status = await window.IDKitSession!.pollStatus();
+
+      if (status.state === "confirmed" && status.result) {
+        overlay.classList.remove("active");
+
+        setStatus("Verified! Loading...", "success");
+        const res = await fetch("/app/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payload: status.result, action: "provision-number" }),
+        });
+        const data = await res.json();
+
+        if (!data.humanId) {
+          setStatus(data.error || "Verification failed.", "error");
+          setBtnLoading("btn-verify", false);
+          return;
+        }
+
+        humanId = data.humanId;
+        sessionToken = data.sessionToken || null;
+        allNumbers = data.numbers || [];
+        setBtnLoading("btn-verify", false);
+
+        if (data.needsPayment) {
+          $("pay-desc").textContent = "USDC on Base via browser wallet";
+          showScreen("screen-pay");
+        } else if (allNumbers.length > 0) {
+          phoneNumber = allNumbers[0].phoneNumber;
+          showNumberScreen();
+        } else {
+          $("pay-desc").textContent = "USDC on Base via browser wallet";
+          showScreen("screen-pay");
+        }
+        return;
+      }
+
+      if (status.state === "failed" || status.state === "error") {
+        overlay.classList.remove("active");
+        setStatus(status.errorCode || "Verification failed. Try again.", "error");
+        setBtnLoading("btn-verify", false);
+        try { window.IDKitSession!.destroy(); } catch {}
+        return;
+      }
+
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+  } catch (e) {
+    overlay.classList.remove("active");
+    setStatus("Verification failed. Try again.", "error");
+    setBtnLoading("btn-verify", false);
+    try { window.IDKitSession!.destroy(); } catch {}
   }
 }
 

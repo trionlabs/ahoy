@@ -309,6 +309,25 @@
       display: inline-flex; align-items: center;
     }
 
+    /* QR overlay */
+    .qr-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 100;
+      justify-content: center; align-items: center;
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    }
+    .qr-overlay.active { display: flex; }
+    .qr-modal {
+      background: var(--cream); border-radius: 20px; border: 1px solid var(--stroke);
+      padding: 2rem; max-width: 340px; width: 90%;
+      display: flex; flex-direction: column; align-items: center; gap: 1rem;
+    }
+    .qr-title {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem;
+      color: var(--ink);
+    }
+    .qr-img { width: 220px; height: 220px; border-radius: 12px; background: #fff; }
+
     @keyframes revealUp {
       from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
@@ -447,6 +466,19 @@
       });
     });
   </script>
+  <!-- QR code overlay for browser-based World ID verification -->
+  <div id="qr-overlay" class="qr-overlay">
+    <div class="qr-modal">
+      <div class="qr-title">Scan with World App</div>
+      <img id="qr-code" class="qr-img" alt="QR Code" />
+      <a id="qr-deeplink" class="btn btn-primary" style="display:none;text-decoration:none;text-align:center">
+        <span class="btn-text">Open World App</span>
+      </a>
+      <p id="qr-status" class="info" style="font-size:0.8rem"></p>
+      <button id="qr-cancel" class="btn btn-outline btn-sm"><span class="btn-text">Cancel</span></button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@worldcoin/idkit-standalone@2.2.5/build/index.global.js"></script>
   <script type="module" src="/app.js"></script>
 </body>
