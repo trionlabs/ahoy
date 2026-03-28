@@ -225,19 +225,29 @@ app.use(async (c, next) => {
 // --- Rate limiting (simple in-memory, per IP) ---
 const rateLimitMap = new Map<string, { count: number; reset: number }>();
 app.use(async (c, next) => {
-  const ip = c.req.header("x-forwarded-for") || "unknown";
+  // Use x-real-ip (Railway), fall back to x-forwarded-for first entry, then "unknown"
+  const fwd = c.req.header("x-forwarded-for");
+  const ip = c.req.header("x-real-ip") || (fwd ? fwd.split(",")[0].trim() : "unknown");
   const now = Date.now();
   const entry = rateLimitMap.get(ip);
   if (!entry || now > entry.reset) {
-    rateLimitMap.set(ip, { count: 1, reset: now + 60000 }); // 60s window
+    rateLimitMap.set(ip, { count: 1, reset: now + 60000 });
   } else {
     entry.count++;
-    if (entry.count > 60) { // 60 requests per minute
+    if (entry.count > 60) {
       return c.json({ error: "Rate limited" }, 429);
     }
   }
   await next();
 });
+
+// Clean expired rate limit entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap) {
+    if (now > entry.reset) rateLimitMap.delete(ip);
+  }
+}, 5 * 60 * 1000);
 
 // --- x402 discovery (for x402scan + agentcash) ---
 app.get("/.well-known/x402", (c) => {
@@ -679,6 +689,10 @@ app.post("/webhook/voice", async (c) => {
 // POST /webhook/voice/gather, Twilio sends speech transcription here
 app.post("/webhook/voice/gather", async (c) => {
   const body = await c.req.parseBody();
+  const params = Object.fromEntries(Object.entries(body).map(([k, v]) => [k, String(v)]));
+  if (!validateTwilioWebhook(c.req.header("x-twilio-signature"), `${BASE_URL}/webhook/voice/gather`, params)) {
+    return c.text("Forbidden", 403);
+  }
   const speechResult = body["SpeechResult"] as string;
   const callSid = body["CallSid"] as string;
 
@@ -707,6 +721,10 @@ app.post("/webhook/voice/gather", async (c) => {
 // POST /webhook/voice/status, cleanup when call ends
 app.post("/webhook/voice/status", async (c) => {
   const body = await c.req.parseBody();
+  const params = Object.fromEntries(Object.entries(body).map(([k, v]) => [k, String(v)]));
+  if (!validateTwilioWebhook(c.req.header("x-twilio-signature"), `${BASE_URL}/webhook/voice/status`, params)) {
+    return c.text("Forbidden", 403);
+  }
   const callSid = body["CallSid"] as string;
   const status = body["CallStatus"] as string;
   console.log(`[voice] call ${callSid} -> ${status}`);
