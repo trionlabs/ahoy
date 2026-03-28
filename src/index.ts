@@ -924,8 +924,9 @@ app.get("/", (c) => c.redirect("/app"));
 // Serve static files
 const PUBLIC_DIR = new URL("../public", import.meta.url).pathname;
 app.use("/app.js", serveStatic({ root: PUBLIC_DIR }));
-app.use("/favicon.jpg", serveStatic({ root: PUBLIC_DIR }));
+app.use("/favicon.png", serveStatic({ root: PUBLIC_DIR }));
 app.use("/favicon.ico", serveStatic({ root: PUBLIC_DIR }));
+app.use("/favicon.jpg", serveStatic({ root: PUBLIC_DIR }));
 app.use("/dashboard.html", serveStatic({ root: PUBLIC_DIR }));
 
 // Dashboard entry point
