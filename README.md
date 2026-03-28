@@ -6,7 +6,7 @@ Phone numbers for AI agents with calls and SMS. All your agents share the same n
 npx skills add github:trionlabs/ahoy
 ```
 
-**API:** [useahoy.app](https://useahoy.app) | **Skill:** [SKILL.md](./skills/ahoy/SKILL.md)
+**API:** [useahoy.app](https://useahoy.app) | **x402scan:** [ahoy](https://www.x402scan.com/server/bdb3de57-750e-42d0-b7e1-a54a5c809871) | **Skill:** [SKILL.md](./skills/ahoy/SKILL.md)
 
 > "Phone numbers present another interesting case. Agents will increasingly need phone numbers for two-factor authentication and signups. Without proof of unique human, thousands of agents could each acquire unique phone numbers, overwhelming telecommunications infrastructure. With AgentKit, a service can ensure that each unique human receives one phone number, shared across all of their agents."
 > - [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)
@@ -68,7 +68,7 @@ graph TB
 
     subgraph "Mini App Flow"
         USER[Human in World App] -->|World ID verify| WID[World ID Verify]
-        WID -->|nullifier_hash = humanId| PAY[Pay 0.5 WLD or $0.99 USDC]
+        WID -->|nullifier_hash = humanId| PAY[Pay $0.99 USDC]
         PAY --> PROV
     end
 
@@ -78,7 +78,7 @@ graph TB
 
 **Agent API**: AI agents pay via x402, prove humanity via AgentKit, get a number programmatically.
 
-**Mini App**: Humans open ahoy in World App, verify with World ID, pay in WLD or USDC, manage their number.
+**Mini App**: Humans open ahoy in World App, verify with World ID, pay in USDC, manage their number.
 
 Both flows enforce the same invariant. Both produce the same EAS attestation.
 
@@ -285,7 +285,7 @@ Open `http://localhost:4021/app` in a browser (dev mode) or in World App (produc
 | Server | [Hono](https://hono.dev) |
 | Proof of human | [World AgentKit](https://docs.world.org/agents/agent-kit/integrate) |
 | Payment (agents) | [x402](https://github.com/coinbase/x402) (USDC on World Chain) |
-| Payment (humans) | [World MiniKit](https://docs.world.org/mini-apps) (WLD / USDC) |
+| Payment (humans) | [World MiniKit](https://docs.world.org/mini-apps) (USDC) |
 | Agent discovery | [x402 Bazaar](https://docs.cdp.coinbase.com/x402/bazaar), [AgentCash](https://agentcash.dev), [x402scan](https://www.x402scan.com) |
 | Phone numbers | [Twilio](https://www.twilio.com) (SMS + Voice) |
 | Voice AI | [Claude](https://anthropic.com) (Anthropic API) |
