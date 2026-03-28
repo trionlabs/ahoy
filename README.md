@@ -8,7 +8,7 @@ npx skills add github:trionlabs/ahoy
 
 **API:** [useahoy.app](https://useahoy.app) | **x402scan:** [ahoy](https://www.x402scan.com/server/bdb3de57-750e-42d0-b7e1-a54a5c809871) | **Skill:** [SKILL.md](./skills/ahoy/SKILL.md)
 
-> "Phone numbers present another interesting case. Agents will increasingly need phone numbers for two-factor authentication and signups. Without proof of unique human, thousands of agents could each acquire unique phone numbers, overwhelming telecommunications infrastructure. With AgentKit, a service can ensure that each unique human receives one phone number, shared across all of their agents."
+> *"Phone numbers present another interesting case. Agents will increasingly need phone numbers for two-factor authentication and signups. Without proof of unique human, thousands of agents could each acquire unique phone numbers, overwhelming telecommunications infrastructure. With AgentKit, a service can ensure that each unique human receives one phone number, shared across all of their agents."*
 > [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)
 
 > *"Consider restaurant reservations. A popular spot could let human-backed agents book tables on behalf of verified humans, while still preventing scalpers from deploying hundreds of agents to hoard reservations for resale. The platform does not need to charge $20 per request to deter abuse. It just needs to know that each reservation is tied to a unique person. The same could apply to a ticketing platform selling concert tickets."*
@@ -16,46 +16,46 @@ npx skills add github:trionlabs/ahoy
 
 ## Contents
 
-- [Beyond Phone Numbers](#beyond-phone-numbers) — verify-phone for restaurants, ticketing, and more
-- [Free Trial for Agents](#free-trial-for-agents) — first month free via AgentKit
-- [How It Works](#how-it-works) — agent → AgentBook → ahoy → Twilio
-- [The Sybil Attack](#the-sybil-attack) — 100 agents, 5 humans, 5 numbers
-- [Two Ways In](#two-ways-in) — agent API vs Mini App
-- [Every Number Has An AI](#every-number-has-an-ai) — voice calls powered by Claude
-- [On-Chain Privacy](#on-chain-privacy) — EAS attestation, no phone data on-chain
-- [Security and Billing](#security-and-billing) — AES-256-GCM encryption, number lifecycle
-- [XMTP SMS Bridge](#xmtp-sms-bridge) — bidirectional SMS ↔ XMTP
-- [World ID v4 Compatibility](#world-id-v4-compatibility) — v4 verification endpoint fix
-- [Quick Start](#quick-start) — install, configure, run
-- [Stack](#stack) — Hono, AgentKit, x402, Twilio, XMTP, EAS
-- [Discovery](#discovery) — AgentCash, x402scan, OpenAPI
-- [API](#api) — full endpoint reference
+- [Beyond Phone Numbers](#beyond-phone-numbers) -- verify-phone for restaurants, ticketing, and more
+- [Free Trial for Agents](#free-trial-for-agents) -- first month free via AgentKit
+- [How It Works](#how-it-works) -- agent -> AgentBook -> ahoy -> Twilio
+- [The Sybil Attack](#the-sybil-attack) -- 100 agents, 5 humans, 5 numbers
+- [Two Ways In](#two-ways-in) -- agent API vs Mini App
+- [Every Number Has An AI](#every-number-has-an-ai) -- voice calls powered by Claude
+- [On-Chain Privacy](#on-chain-privacy) -- EAS attestation, no phone data on-chain
+- [Security and Billing](#security-and-billing) -- AES-256-GCM encryption, number lifecycle
+- [XMTP SMS Bridge](#xmtp-sms-bridge) -- bidirectional SMS <-> XMTP
+- [World ID v4 Compatibility](#world-id-v4-compatibility) -- v4 verification endpoint fix
+- [Quick Start](#quick-start) -- install, configure, run
+- [Stack](#stack) -- Hono, AgentKit, x402, Twilio, XMTP, EAS
+- [Discovery](#discovery) -- AgentCash, x402scan, OpenAPI
+- [API](#api) -- full endpoint reference
 - [Environment Variables](#environment-variables)
 
 ---
 
 ## Beyond Phone Numbers
 
-ahoy's `GET /verify-phone` endpoint lets any service check if a phone number is backed by a verified human — for just $0.01 per query. This unlocks sybil resistance for platforms that already collect phone numbers but have no way to know if there's a real person behind them.
+ahoy's `GET /verify-phone` endpoint lets any service check if a phone number is backed by a verified human -- for just $0.01 per query. This unlocks sybil resistance for platforms that already collect phone numbers but have no way to know if there's a real person behind them.
 
 **Restaurant reservations.** A popular spot like Resy or OpenTable could let human-backed agents book tables on behalf of verified humans, while still preventing scalpers from deploying hundreds of agents to hoard reservations for resale. The platform doesn't need to charge $20 per request to deter abuse. It just needs to know that each reservation is tied to a unique person.
 
-**Concert tickets.** A ticketing platform selling limited-availability tickets faces the same problem. Bots grab seats in bulk for resale. With `verify-phone`, the platform calls ahoy to check if the buyer's phone number maps to a verified human — one human, one ticket, no scalping.
+**Concert tickets.** A ticketing platform selling limited-availability tickets faces the same problem. Bots grab seats in bulk for resale. With `verify-phone`, the platform calls ahoy to check if the buyer's phone number maps to a verified human -- one human, one ticket, no scalping.
 
 ```
 GET /verify-phone?phone=+14155551234
-→ { "verified": true, "humanId": "0x1d73..." }
+-> { "verified": true, "humanId": "0x1d73..." }
 
 One query. One cent. Sybil resistance as a service.
 ```
 
 ## Free Trial for Agents
 
-AI agents using [AgentKit](https://docs.world.org/agents/agent-kit/integrate) get their first month free — no payment required for the initial provision. After 30 days, renewal is $3.99/month via x402. This lets agents try ahoy with zero upfront cost while keeping sybil resistance intact.
+AI agents using [AgentKit](https://docs.world.org/agents/agent-kit/integrate) get their first month free -- no payment required for the initial provision. After 30 days, renewal is $3.99/month via x402. This lets agents try ahoy with zero upfront cost while keeping sybil resistance intact.
 
 ```
-POST /provision           → first month free (AgentKit verified)
-POST /renew   ($3.99)     → extend 30 days
+POST /provision           -> first month free (AgentKit verified)
+POST /renew   ($3.99)     -> extend 30 days
 ```
 
 ---
