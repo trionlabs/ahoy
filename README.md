@@ -299,10 +299,13 @@ Open `http://localhost:4021/app` in a browser (dev mode) or in World App (produc
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `POST` | `/provision` | x402 ($0.10) | Provision a number (returns existing if already provisioned) |
-| `POST` | `/provision?notify=xmtp` | x402 ($0.10) | Same + register wallet for XMTP forwarding |
+| `POST` | `/sms/send` | x402 ($0.25) | Send one-time SMS (no World ID) |
+| `POST` | `/sms/receive` | x402 ($2.00) | Get temp number, receive one SMS (no World ID) |
+| `POST` | `/call/tts` | x402 ($0.50) | Make TTS call (no World ID) |
 | `GET` | `/verify-phone?phone=+1..` | x402 ($0.01) | Check if phone is backed by verified human |
-| `POST` | `/renew` | x402 ($0.10) | Extend billing 30 days |
+| `POST` | `/provision` | x402 + AgentKit ($0.10) | Provision persistent number (World ID required) |
+| `POST` | `/provision?notify=xmtp` | x402 + AgentKit ($0.10) | Same + XMTP forwarding |
+| `POST` | `/renew` | x402 + AgentKit ($0.10) | Extend billing 30 days |
 | `GET` | `/number` | AgentKit (free) | Get assigned numbers |
 | `GET` | `/messages` | AgentKit (free) | Read SMS inbox |
 | `GET` | `/status` | AgentKit (free) | Check number status and billing |

@@ -101,13 +101,21 @@ All incoming SMS will be forwarded to your XMTP address as DMs.
 
 ## API Reference
 
-### Paid (x402 + AgentKit)
+### Paid (x402 only, no World ID needed)
 
 | Method | Path | Price | Description |
 |---|---|---|---|
-| `POST` | `/provision` | $0.10 | First call: provisions a number. Subsequent calls: returns existing numbers. |
-| `POST` | `/provision?notify=xmtp` | $0.10 | Same as above + registers your wallet for XMTP SMS forwarding |
+| `POST` | `/sms/send` | $0.25 | Send a one-time SMS from ahoy's shared number |
+| `POST` | `/sms/receive` | $2.00 | Get a temp number, receive one SMS, auto-releases in 5 min |
+| `POST` | `/call/tts` | $0.50 | Make a one-time TTS call to any number |
 | `GET` | `/verify-phone?phone=+1...` | $0.01 | Check if a phone is backed by a verified human |
+
+### Paid (x402 + AgentKit, World ID required)
+
+| Method | Path | Price | Description |
+|---|---|---|---|
+| `POST` | `/provision` | $0.10 | Provision a persistent number with sybil resistance |
+| `POST` | `/provision?notify=xmtp` | $0.10 | Same + registers wallet for XMTP SMS forwarding |
 | `POST` | `/renew` | $0.10 | Extend billing 30 days |
 
 ### Free (AgentKit auth only)

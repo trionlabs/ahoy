@@ -39,7 +39,7 @@ import {
   extendBillingById,
   MAX_NUMBERS,
 } from "./storage.js";
-import { provisionNumber, twilio, twilioClient, getTwilioBalance, canProvision } from "./twilio.js";
+import { provisionNumber, twilio, twilioClient, getTwilioBalance, canProvision, sendSms, makeCall } from "./twilio.js";
 import { initEas, attestProvision, easEnabled } from "./eas.js";
 // XMTP loaded dynamically - native bindings may not be available
 let initXmtp: () => Promise<void> = async () => {};
@@ -133,6 +133,45 @@ const routes = {
         output: {
           example: { phoneNumber: "+14155551234", provisioned: true },
         },
+      }),
+    },
+  },
+  "POST /sms/send": {
+    accepts: [
+      { scheme: "exact" as const, price: "$0.25", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.25", network: BASE_CHAIN, payTo: PAY_TO },
+    ],
+    extensions: {
+      ...declareDiscoveryExtension({
+        bodyType: "json" as const,
+        input: { to: "+15551234567", message: "Hello from ahoy" },
+        output: { example: { sent: true, from: "+14155551234" } },
+      }),
+    },
+  },
+  "POST /sms/receive": {
+    accepts: [
+      { scheme: "exact" as const, price: "$2.00", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$2.00", network: BASE_CHAIN, payTo: PAY_TO },
+    ],
+    extensions: {
+      ...declareDiscoveryExtension({
+        bodyType: "json" as const,
+        input: {},
+        output: { example: { id: "uuid", phoneNumber: "+14155551234", expiresIn: "5 minutes" } },
+      }),
+    },
+  },
+  "POST /call/tts": {
+    accepts: [
+      { scheme: "exact" as const, price: "$0.50", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.50", network: BASE_CHAIN, payTo: PAY_TO },
+    ],
+    extensions: {
+      ...declareDiscoveryExtension({
+        bodyType: "json" as const,
+        input: { to: "+15551234567", message: "Hello from ahoy", voice: "Polly.Joanna" },
+        output: { example: { called: true, callSid: "CA..." } },
       }),
     },
   },
@@ -259,6 +298,9 @@ app.get("/.well-known/x402", (c) => {
     description: "Phone numbers for AI agents with calls, SMS, and sybil resistance via World ID.",
     resources: [
       "POST /provision",
+      "POST /sms/send",
+      "POST /sms/receive",
+      "POST /call/tts",
       "GET /verify-phone",
       "POST /renew",
     ],
@@ -322,6 +364,39 @@ app.get("/openapi.json", (c) => {
           summary: "Check number status and billing (free, requires AgentKit auth)",
           responses: {
             "200": { description: "Status", content: { "application/json": { schema: { type: "object", properties: { humanId: { type: "string" }, numbers: { type: "array" }, quota: { type: "string" } } } } } },
+          },
+        },
+      },
+      "/sms/send": {
+        post: {
+          summary: "Send a one-time SMS (no World ID needed)",
+          description: "Pay $0.25 to send an SMS from ahoy's shared number. No provisioning or identity required.",
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "0.25" },
+          responses: {
+            "200": { description: "SMS sent", content: { "application/json": { schema: { type: "object", properties: { sent: { type: "boolean" }, from: { type: "string" }, sid: { type: "string" } } } } } },
+            "402": { description: "Payment required" },
+          },
+        },
+      },
+      "/sms/receive": {
+        post: {
+          summary: "Get a temp number to receive one SMS (no World ID needed)",
+          description: "Pay $2.00 to get a temporary phone number. Poll GET /sms/receive/:id for the incoming message. Number auto-releases after 5 minutes or first SMS.",
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "2.00" },
+          responses: {
+            "200": { description: "Temp number provisioned", content: { "application/json": { schema: { type: "object", properties: { id: { type: "string" }, phoneNumber: { type: "string" }, expiresIn: { type: "string" } } } } } },
+            "402": { description: "Payment required" },
+          },
+        },
+      },
+      "/call/tts": {
+        post: {
+          summary: "Make a one-time TTS call (no World ID needed)",
+          description: "Pay $0.50 to call a phone number and speak a text-to-speech message. No provisioning or identity required.",
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "0.50" },
+          responses: {
+            "200": { description: "Call initiated", content: { "application/json": { schema: { type: "object", properties: { called: { type: "boolean" }, callSid: { type: "string" } } } } } },
+            "402": { description: "Payment required" },
           },
         },
       },
@@ -477,6 +552,90 @@ app.get("/verify-phone", (c) => {
     phoneNumber: phone,
     humanId,
   });
+});
+
+// --- One-shot endpoints (x402 only, no World ID) ---
+const SHARED_NUMBER = process.env.AHOY_SHARED_NUMBER || "";
+
+// POST /sms/send — send a one-time SMS (no World ID needed)
+app.post("/sms/send", async (c) => {
+  const { to, message } = (await c.req.json()) as { to: string; message: string };
+  if (!to || !message) return c.json({ error: "Missing to or message" }, 400);
+  if (!SHARED_NUMBER) return c.json({ error: "No shared number configured" }, 503);
+  try {
+    const result = await sendSms(SHARED_NUMBER, to, message);
+    console.log(`[sms/send] ${SHARED_NUMBER} -> ${to}: ${message.slice(0, 50)}`);
+    return c.json({ sent: true, from: SHARED_NUMBER, sid: result.sid });
+  } catch (e: any) {
+    return c.json({ error: e.message || "Failed to send SMS" }, 500);
+  }
+});
+
+// POST /sms/receive — provision a temp number, wait for one SMS, return it, release
+// Returns the provisioned number immediately. Poll GET /sms/receive/:id for the message.
+const tempNumbers = new Map<string, { phoneNumber: string; sid: string; humanId: string; message: any; createdAt: number }>();
+
+app.post("/sms/receive", async (c) => {
+  if (!(await canProvision())) {
+    return c.json({ error: "Service temporarily unavailable" }, 503);
+  }
+  try {
+    const id = crypto.randomUUID();
+    const tempHumanId = `temp-${id}`;
+    const { phoneNumber, sid } = await provisionNumber(BASE_URL);
+    tempNumbers.set(id, { phoneNumber, sid, humanId: tempHumanId, message: null, createdAt: Date.now() });
+    // Store reverse lookup so webhook can route
+    setNumber(tempHumanId, phoneNumber, sid);
+    console.log(`[sms/receive] temp number ${phoneNumber} (id: ${id})`);
+    return c.json({ id, phoneNumber, expiresIn: "5 minutes" });
+  } catch (e: any) {
+    return c.json({ error: e.message || "Failed to provision temp number" }, 500);
+  }
+});
+
+app.get("/sms/receive/:id", async (c) => {
+  const id = c.req.param("id");
+  const temp = tempNumbers.get(id);
+  if (!temp) return c.json({ error: "Invalid or expired ID" }, 404);
+
+  // Check for messages
+  const msgs = getMessages(temp.humanId);
+  if (msgs.length > 0) {
+    // Got a message — clean up
+    tempNumbers.delete(id);
+    // Release number from Twilio
+    try {
+      await twilioClient.incomingPhoneNumbers(temp.sid).remove();
+    } catch {}
+    releaseNumberById(0); // best effort DB cleanup
+    console.log(`[sms/receive] ${temp.phoneNumber} received SMS, releasing`);
+    return c.json({ received: true, phoneNumber: temp.phoneNumber, message: msgs[0] });
+  }
+
+  // Check expiry (5 minutes)
+  if (Date.now() - temp.createdAt > 5 * 60 * 1000) {
+    tempNumbers.delete(id);
+    try {
+      await twilioClient.incomingPhoneNumbers(temp.sid).remove();
+    } catch {}
+    return c.json({ expired: true, phoneNumber: temp.phoneNumber });
+  }
+
+  return c.json({ waiting: true, phoneNumber: temp.phoneNumber, elapsed: Math.floor((Date.now() - temp.createdAt) / 1000) });
+});
+
+// POST /call/tts — make a one-time TTS call (no World ID needed)
+app.post("/call/tts", async (c) => {
+  const { to, message, voice } = (await c.req.json()) as { to: string; message: string; voice?: string };
+  if (!to || !message) return c.json({ error: "Missing to or message" }, 400);
+  if (!SHARED_NUMBER) return c.json({ error: "No shared number configured" }, 503);
+  try {
+    const call = await makeCall(SHARED_NUMBER, to, message, voice || "Polly.Joanna");
+    console.log(`[call/tts] ${SHARED_NUMBER} -> ${to}`);
+    return c.json({ called: true, from: SHARED_NUMBER, callSid: call.sid });
+  } catch (e: any) {
+    return c.json({ error: e.message || "Failed to make call" }, 500);
+  }
 });
 
 // --- Twilio webhook validation ---
