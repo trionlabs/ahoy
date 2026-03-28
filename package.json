@@ -15,7 +15,8 @@
     "sybil:dry": "tsx scripts/sybil-demo.ts 100 5 --dry-run",
     "dashboard": "tsx scripts/sybil-dashboard.ts",
     "typecheck": "tsc --noEmit",
-    "admin": "tsx scripts/admin.ts"
+    "admin": "tsx scripts/admin.ts",
+    "test:x402": "tsx scripts/test-x402.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
