@@ -1,16 +1,10 @@
-FROM ubuntu:24.04
+FROM node:22-alpine
 
-RUN apt-get update && apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-    apt-get install -y nodejs && \
-    npm install -g npm@latest && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache bash
 
 WORKDIR /app
-
 COPY package.json ./
 RUN npm install
-
 COPY . .
 RUN npm run build:client
 
