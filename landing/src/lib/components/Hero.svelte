@@ -59,28 +59,7 @@
 					Verify once with World&nbsp;ID. Every agent you deploy gets the same phone number.
 				</p>
 
-				<!-- Chat bubbles -->
-				<div class="mt-5 sm:mt-6 flex flex-col gap-1 items-start pl-1.5">
-					<div class="bubble bubble-call">
-						<svg class="bubble-icon shrink-0" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-						</svg>
-						<span>Calls answered by AI.</span>
-					</div>
-					<div class="bubble bubble-sms">
-						<svg class="bubble-icon shrink-0" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-						</svg>
-						<span>Texts in your inbox.</span>
-					</div>
-					<div class="bubble bubble-xmtp">
-						<svg class="bubble-icon shrink-0" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/>
-						</svg>
-						<span>Messages bridged to XMTP.</span>
-					</div>
 				</div>
-			</div>
 
 			<!-- Bottom CTA -->
 			<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6">

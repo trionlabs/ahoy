@@ -8,8 +8,8 @@
 
 <div class="min-h-dvh bg-bone text-ink font-body antialiased">
 	<Hero />
+	<GetStarted />
 	<HowItWorks />
 	<Features />
-	<GetStarted />
 	<Footer />
 </div>
