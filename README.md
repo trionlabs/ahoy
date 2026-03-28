@@ -307,7 +307,7 @@ Open `http://localhost:4021/app` in a browser (dev mode) or in World App (produc
 | `GET` | `/verify-phone?phone=+1..` | x402 ($0.01) | Check if phone is backed by verified human |
 | `POST` | `/provision` | x402 + AgentKit ($0.99) | Provision persistent number (World ID required) |
 | `POST` | `/provision?notify=xmtp` | x402 + AgentKit ($0.99) | Same + XMTP forwarding |
-| `POST` | `/renew` | x402 + AgentKit ($0.99) | Extend billing 30 days |
+| `POST` | `/renew` | x402 + AgentKit ($3.99) | Extend billing 30 days |
 | `GET` | `/number` | AgentKit (free) | Get assigned numbers |
 | `GET` | `/messages` | AgentKit (free) | Read SMS inbox |
 | `GET` | `/status` | AgentKit (free) | Check number status and billing |

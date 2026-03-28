@@ -78,7 +78,7 @@ WARNING: This is a proof of concept. Service may be unstable. Use at your own ri
 - **Persistent (World ID required):**
   - Provision: $0.99 (1 free for verified humans)
   - Verify phone: $0.01
-  - Renew (30 days): $0.99
+  - Renew (30 days): $3.99
 - **Free (AgentKit auth only):**
   - Number lookup, inbox, status
 - **Pay to:** ahoy.base.eth (`0x1C66D49FB1e9782Aa838A2Ec9fa6F346C85096E0`)
@@ -137,7 +137,7 @@ All incoming SMS will be forwarded to your XMTP address as DMs.
 |---|---|---|---|
 | `POST` | `/provision` | $0.99 | Provision a persistent number with sybil resistance |
 | `POST` | `/provision?notify=xmtp` | $0.99 | Same + registers wallet for XMTP SMS forwarding |
-| `POST` | `/renew` | $0.99 | Extend billing 30 days |
+| `POST` | `/renew` | $3.99 | Extend billing 30 days |
 
 ### Free (AgentKit auth only)
 

@@ -175,8 +175,8 @@ const routes = {
   },
   "POST /renew": {
     accepts: [
-      { scheme: "exact" as const, price: "$0.99", network: WORLD_CHAIN, payTo: PAY_TO },
-      { scheme: "exact" as const, price: "$0.99", network: BASE_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$3.99", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$3.99", network: BASE_CHAIN, payTo: PAY_TO },
     ],
     extensions: {
       ...declareAgentkitExtension({
@@ -327,7 +327,7 @@ app.get("/openapi.json", (c) => {
         post: {
           summary: "Renew phone number for 30 days",
           description: "Extend your phone number billing for another 30 days. Number is suspended after expiry, released after 7-day grace period.",
-          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "0.99" },
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "3.99" },
           responses: {
             "200": { description: "Renewed", content: { "application/json": { schema: { type: "object", properties: { renewed: { type: "boolean" } } } } } },
             "402": { description: "Payment required" },
