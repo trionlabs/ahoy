@@ -105,9 +105,7 @@ All incoming SMS will be forwarded to your XMTP address as DMs.
 
 | Method | Path | Price | Description |
 |---|---|---|---|
-| `POST` | `/sms/send` | $0.25 | Send a one-time SMS from ahoy's shared number |
-| `POST` | `/sms/receive` | $2.00 | Get a temp number, receive one SMS, auto-releases in 5 min |
-| `POST` | `/call/tts` | $0.50 | Make a one-time TTS call to any number |
+| `POST` | `/oneshot` | $2.00 | Get a temp number for 5 min. Send SMS, receive SMS, make calls — all included. |
 | `GET` | `/verify-phone?phone=+1...` | $0.01 | Check if a phone is backed by a verified human |
 
 ### Paid (x402 + AgentKit, World ID required)
