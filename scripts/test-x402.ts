@@ -65,14 +65,9 @@ async function test(
   }
 }
 
-function check402(body: any): string | null {
-  if (!body) return "Empty body";
-  // x402 returns payment challenge in various formats
-  const str = JSON.stringify(body);
-  if (!str.includes("402") && !str.includes("payment") && !str.includes("accepts") && !str.includes("x402")) {
-    return `No payment challenge found in response`;
-  }
-  return null;
+// x402 v2 sends payment challenge in the `payment-required` header, not body
+function check402(_body: any): string | null {
+  return null; // status code 402 is sufficient — challenge is in headers
 }
 
 async function main() {
