@@ -136,13 +136,13 @@ const routes = {
   },
   "GET /number": {
     accepts: [
-      { scheme: "exact" as const, price: "$0.01", network: WORLD_CHAIN, payTo: PAY_TO },
-      { scheme: "exact" as const, price: "$0.01", network: BASE_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.00", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.00", network: BASE_CHAIN, payTo: PAY_TO },
     ],
     extensions: {
       ...declareAgentkitExtension({
         statement: "Look up your assigned phone number",
-        mode: { type: "free-trial" as const, uses: 3 },
+        mode: { type: "free-trial" as const, uses: 100 },
       }),
       ...declareDiscoveryExtension({
         output: {
@@ -166,13 +166,13 @@ const routes = {
   },
   "GET /messages": {
     accepts: [
-      { scheme: "exact" as const, price: "$0.01", network: WORLD_CHAIN, payTo: PAY_TO },
-      { scheme: "exact" as const, price: "$0.01", network: BASE_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.00", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.00", network: BASE_CHAIN, payTo: PAY_TO },
     ],
     extensions: {
       ...declareAgentkitExtension({
         statement: "Read your SMS inbox",
-        mode: { type: "free-trial" as const, uses: 5 },
+        mode: { type: "free-trial" as const, uses: 100 },
       }),
       ...declareDiscoveryExtension({
         output: {
@@ -183,13 +183,13 @@ const routes = {
   },
   "GET /status": {
     accepts: [
-      { scheme: "exact" as const, price: "$0.01", network: WORLD_CHAIN, payTo: PAY_TO },
-      { scheme: "exact" as const, price: "$0.01", network: BASE_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.00", network: WORLD_CHAIN, payTo: PAY_TO },
+      { scheme: "exact" as const, price: "$0.00", network: BASE_CHAIN, payTo: PAY_TO },
     ],
     extensions: {
       ...declareAgentkitExtension({
         statement: "Check your number status and billing",
-        mode: { type: "free-trial" as const, uses: 5 },
+        mode: { type: "free-trial" as const, uses: 100 },
       }),
       ...declareDiscoveryExtension({
         output: {
@@ -255,10 +255,7 @@ app.get("/.well-known/x402", (c) => {
     version: 1,
     resources: [
       `${BASE_URL}/provision`,
-      `${BASE_URL}/number`,
-      `${BASE_URL}/messages`,
       `${BASE_URL}/verify-phone`,
-      `${BASE_URL}/status`,
       `${BASE_URL}/renew`,
     ],
   });
@@ -290,11 +287,9 @@ app.get("/openapi.json", (c) => {
       },
       "/number": {
         get: {
-          summary: "Get assigned phone number",
-          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "$0.01" },
+          summary: "Get assigned phone number (free, requires AgentKit auth)",
           responses: {
             "200": { description: "Phone number", content: { "application/json": { schema: { type: "object", properties: { phoneNumber: { type: "string" } } } } } },
-            "402": { description: "Payment required" },
           },
         },
       },
@@ -310,21 +305,17 @@ app.get("/openapi.json", (c) => {
       },
       "/messages": {
         get: {
-          summary: "Read SMS inbox",
-          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "$0.01" },
+          summary: "Read SMS inbox (free, requires AgentKit auth)",
           responses: {
             "200": { description: "Messages", content: { "application/json": { schema: { type: "object", properties: { messages: { type: "array" } } } } } },
-            "402": { description: "Payment required" },
           },
         },
       },
       "/status": {
         get: {
-          summary: "Check number status and billing",
-          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "$0.01" },
+          summary: "Check number status and billing (free, requires AgentKit auth)",
           responses: {
             "200": { description: "Status", content: { "application/json": { schema: { type: "object", properties: { humanId: { type: "string" }, numbers: { type: "array" }, quota: { type: "string" } } } } } },
-            "402": { description: "Payment required" },
           },
         },
       },
