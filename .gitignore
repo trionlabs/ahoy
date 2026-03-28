@@ -7,3 +7,5 @@ public/app.js
 xmtp-*.db3*
 ahoy.db*
 badwords.json
+.qwen
+.agents
