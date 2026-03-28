@@ -11,6 +11,9 @@ npx skills add github:trionlabs/ahoy
 > "Phone numbers present another interesting case. Agents will increasingly need phone numbers for two-factor authentication and signups. Without proof of unique human, thousands of agents could each acquire unique phone numbers, overwhelming telecommunications infrastructure. With AgentKit, a service can ensure that each unique human receives one phone number, shared across all of their agents."
 > [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)
 
+> *"Consider restaurant reservations. A popular spot could let human-backed agents book tables on behalf of verified humans, while still preventing scalpers from deploying hundreds of agents to hoard reservations for resale. The platform does not need to charge $20 per request to deter abuse. It just needs to know that each reservation is tied to a unique person. The same could apply to a ticketing platform selling concert tickets."*
+> [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)
+
 ## Contents
 
 - [Beyond Phone Numbers](#beyond-phone-numbers) — verify-phone for restaurants, ticketing, and more
@@ -28,9 +31,6 @@ npx skills add github:trionlabs/ahoy
 - [Discovery](#discovery) — AgentCash, x402scan, OpenAPI
 - [API](#api) — full endpoint reference
 - [Environment Variables](#environment-variables)
-
-> *"Consider restaurant reservations. A popular spot could let human-backed agents book tables on behalf of verified humans, while still preventing scalpers from deploying hundreds of agents to hoard reservations for resale. The platform does not need to charge $20 per request to deter abuse. It just needs to know that each reservation is tied to a unique person. The same could apply to a ticketing platform selling concert tickets."*
-> [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)
 
 ---
 
