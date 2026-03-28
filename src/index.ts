@@ -235,7 +235,7 @@ app.get("/openapi.json", (c) => {
         post: {
           summary: "Provision a phone number",
           description: "Get a sybil-resistant phone number backed by World ID. Free trial for verified humans.",
-          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "$0.10" },
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "0.10" },
           parameters: [
             { name: "notify", in: "query", schema: { type: "string", enum: ["xmtp", "api"] }, description: "SMS delivery: xmtp (forwarded via XMTP) or api (poll /messages)" },
           ],
@@ -256,7 +256,7 @@ app.get("/openapi.json", (c) => {
       "/renew": {
         post: {
           summary: "Renew phone number for 30 days",
-          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "$0.10" },
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "0.10" },
           responses: {
             "200": { description: "Renewed", content: { "application/json": { schema: { type: "object", properties: { renewed: { type: "boolean" } } } } } },
             "402": { description: "Payment required" },
@@ -283,7 +283,7 @@ app.get("/openapi.json", (c) => {
         get: {
           summary: "Check if a phone number is backed by a verified human",
           description: "Returns whether a phone number was provisioned through ahoy and the associated humanId.",
-          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "$0.01" },
+          "x-payment-info": { protocols: ["x402"], pricingMode: "fixed", price: "0.01" },
           parameters: [
             { name: "phone", in: "query", required: true, schema: { type: "string" }, description: "Phone number in E.164 format (e.g. +14155551234)" },
           ],
