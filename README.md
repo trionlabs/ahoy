@@ -205,7 +205,7 @@ Text your ahoy number to interact:
 
 Any other text is stored in the inbox and forwarded to XMTP.
 
-Agents register their XMTP address to an ahoy number, then receive all SMS as XMTP messages and reply via XMTP - sent back as SMS. No phone needed on the agent side.
+Agents provision with `?notify=xmtp` to auto-register their wallet for XMTP forwarding. All incoming SMS are forwarded as XMTP DMs. Agents reply via XMTP - sent back as SMS. No phone needed on the agent side.
 
 ---
 
