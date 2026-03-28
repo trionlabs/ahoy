@@ -2,6 +2,7 @@
 	import Hero from '$lib/components/Hero.svelte';
 	import HowItWorks from '$lib/components/HowItWorks.svelte';
 	import Features from '$lib/components/Features.svelte';
+	import GetStarted from '$lib/components/GetStarted.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 </script>
 
@@ -9,5 +10,6 @@
 	<Hero />
 	<HowItWorks />
 	<Features />
+	<GetStarted />
 	<Footer />
 </div>
