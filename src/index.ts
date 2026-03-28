@@ -570,6 +570,18 @@ function containsBadWords(text: string): boolean {
   return badwords.some((w) => lower.includes(w.toLowerCase()));
 }
 
+// --- Helper: extract payer wallet from x402 payment header ---
+function getPayerAddress(c: any): string | null {
+  const paymentHeader = c.req.header("payment-signature") || c.req.header("x-payment");
+  if (!paymentHeader) return null;
+  try {
+    const decoded = JSON.parse(Buffer.from(paymentHeader, "base64").toString());
+    return decoded?.payload?.authorization?.from || decoded?.from || null;
+  } catch {
+    return null;
+  }
+}
+
 // --- One-shot endpoints (x402 only, no World ID) ---
 const SHARED_NUMBER = process.env.AHOY_SHARED_NUMBER || "";
 
@@ -580,9 +592,10 @@ app.post("/sms/send", async (c) => {
   if (containsBadWords(message)) return c.json({ error: "Message contains prohibited content" }, 400);
   if (!SHARED_NUMBER) return c.json({ error: "No shared number configured" }, 503);
   try {
+    const payer = getPayerAddress(c);
     const result = await sendSms(SHARED_NUMBER, to, message);
-    console.log(`[sms/send] ${SHARED_NUMBER} -> ${to}: ${message.slice(0, 50)}`);
-    return c.json({ sent: true, from: SHARED_NUMBER, sid: result.sid });
+    console.log(`[sms/send] ${SHARED_NUMBER} -> ${to} (payer: ${payer}): ${message.slice(0, 50)}`);
+    return c.json({ sent: true, from: SHARED_NUMBER, sid: result.sid, payer });
   } catch (e: any) {
     return c.json({ error: e.message || "Failed to send SMS" }, 500);
   }
@@ -648,9 +661,10 @@ app.post("/call/tts", async (c) => {
   if (containsBadWords(message)) return c.json({ error: "Message contains prohibited content" }, 400);
   if (!SHARED_NUMBER) return c.json({ error: "No shared number configured" }, 503);
   try {
+    const payer = getPayerAddress(c);
     const call = await makeCall(SHARED_NUMBER, to, message, voice || "Polly.Joanna");
-    console.log(`[call/tts] ${SHARED_NUMBER} -> ${to}`);
-    return c.json({ called: true, from: SHARED_NUMBER, callSid: call.sid });
+    console.log(`[call/tts] ${SHARED_NUMBER} -> ${to} (payer: ${payer})`);
+    return c.json({ called: true, from: SHARED_NUMBER, callSid: call.sid, payer });
   } catch (e: any) {
     return c.json({ error: e.message || "Failed to make call" }, 500);
   }
