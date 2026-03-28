@@ -80,7 +80,6 @@ document.addEventListener("DOMContentLoaded", () => {
     $("toggle-agent").classList.toggle("open");
     $("agent-config").classList.toggle("open");
   });
-  $("btn-pay-wld").addEventListener("click", () => doPay("wld"));
   $("btn-pay-usdc").addEventListener("click", () => doPay("usdc"));
   $("btn-provision-new").addEventListener("click", doProvisionNew);
   $("btn-refresh").addEventListener("click", () => {
@@ -290,25 +289,15 @@ async function doPay(token: "wld" | "usdc") {
     const { reference, payTo } = await initRes.json();
 
     if (!devMode) {
-      const tokens =
-        token === "wld"
-          ? [
-              {
-                symbol: Tokens.WLD,
-                token_amount: tokenToDecimals(1, Tokens.WLD).toString(),
-              },
-            ]
-          : [
-              {
-                symbol: Tokens.USDC,
-                token_amount: tokenToDecimals(0.99, Tokens.USDC).toString(),
-              },
-            ];
-
       const payload: PayCommandInput = {
         reference,
         to: payTo,
-        tokens,
+        tokens: [
+          {
+            symbol: Tokens.USDC,
+            token_amount: tokenToDecimals(0.99, Tokens.USDC).toString(),
+          },
+        ],
         description: "Ahoy - phone number provisioning",
       };
 
