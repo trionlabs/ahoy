@@ -156,6 +156,22 @@ export function getXmtpAddress(): string | null {
   return agent?.address ?? null;
 }
 
+export async function sendXmtpDm(
+  toAddress: string,
+  message: string,
+): Promise<boolean> {
+  if (!agent) return false;
+  try {
+    const dm = await agent.createDmWithAddress(toAddress as `0x${string}`);
+    await dm.sendText(message);
+    console.log(`[xmtp] sent DM to ${toAddress}`);
+    return true;
+  } catch (e) {
+    console.error(`[xmtp] send DM failed:`, e);
+    return false;
+  }
+}
+
 export async function forwardSmsToXmtp(
   humanId: string,
   from: string,

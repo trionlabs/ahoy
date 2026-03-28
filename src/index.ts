@@ -44,12 +44,14 @@ let initXmtp: () => Promise<void> = async () => {};
 let forwardSmsToXmtp: (humanId: string, from: string, body: string) => Promise<void> = async () => {};
 let registerXmtpSubscriber: (humanId: string, walletAddress: string) => void = () => {};
 let getXmtpAddress: () => string | null = () => null;
+let sendXmtpDm: (to: string, msg: string) => Promise<boolean> = async () => false;
 try {
   const xmtp = await import("./xmtp.js");
   initXmtp = xmtp.initXmtp;
   forwardSmsToXmtp = xmtp.forwardSmsToXmtp;
   registerXmtpSubscriber = xmtp.registerXmtpSubscriber;
   getXmtpAddress = xmtp.getXmtpAddress;
+  sendXmtpDm = xmtp.sendXmtpDm;
 } catch (e: any) {
   console.log("[xmtp] bridge disabled:", e?.message || e);
   if (e?.cause) console.log("[xmtp] cause:", e.cause?.message || e.cause);
@@ -580,6 +582,18 @@ app.get("/admin", async (c) => {
     xmtp: getXmtpAddress(),
     eas: easEnabled,
   });
+});
+
+// POST /admin/xmtp-send, send XMTP DM (admin only)
+app.post("/admin/xmtp-send", async (c) => {
+  const auth = c.req.header("authorization");
+  if (auth !== `Bearer ${process.env.TWILIO_AUTH_TOKEN}`) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const { to, message } = (await c.req.json()) as { to: string; message: string };
+  if (!to || !message) return c.json({ error: "Missing to or message" }, 400);
+  const sent = await sendXmtpDm(to, message);
+  return c.json({ sent, to });
 });
 
 // GET /mappings, debug: see all human -> number mappings
