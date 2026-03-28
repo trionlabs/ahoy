@@ -106,11 +106,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         setBtnLoading("btn-verify", false);
         if (idkitVerifyData.needsPayment) {
+          $("pay-desc").textContent = "USDC on Base via browser wallet";
           showScreen("screen-pay");
         } else if (allNumbers.length > 0) {
           phoneNumber = allNumbers[0].phoneNumber;
           showNumberScreen();
         } else {
+          $("pay-desc").textContent = "USDC on Base via browser wallet";
           showScreen("screen-pay");
         }
       },
@@ -339,6 +341,65 @@ async function doVerify() {
   }
 }
 
+// --- Browser wallet USDC payment (for IDKit users) ---
+// USDC on Base (8453) — 6 decimals
+const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+const BASE_CHAIN_ID = "0x2105"; // 8453
+
+async function payWithBrowserWallet(payTo: string): Promise<string> {
+  const ethereum = (window as any).ethereum;
+  if (!ethereum) {
+    throw new Error("No wallet found. Install Coinbase Wallet or MetaMask.");
+  }
+
+  // Connect wallet
+  setPayStatus("Connect your wallet...");
+  const accounts: string[] = await ethereum.request({ method: "eth_requestAccounts" });
+  if (!accounts[0]) throw new Error("No account connected");
+
+  // Switch to Base
+  setPayStatus("Switching to Base...");
+  try {
+    await ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: BASE_CHAIN_ID }],
+    });
+  } catch (e: any) {
+    if (e.code === 4902) {
+      await ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [{
+          chainId: BASE_CHAIN_ID,
+          chainName: "Base",
+          nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+          rpcUrls: ["https://mainnet.base.org"],
+          blockExplorerUrls: ["https://basescan.org"],
+        }],
+      });
+    } else {
+      throw e;
+    }
+  }
+
+  // Encode ERC-20 transfer(address, uint256) — $0.99 USDC = 990000 (6 decimals)
+  setPayStatus("Confirm in your wallet...");
+  const selector = "0xa9059cbb";
+  const paddedTo = payTo.slice(2).toLowerCase().padStart(64, "0");
+  const paddedAmount = (990000).toString(16).padStart(64, "0");
+  const data = selector + paddedTo + paddedAmount;
+
+  const txHash: string = await ethereum.request({
+    method: "eth_sendTransaction",
+    params: [{
+      from: accounts[0],
+      to: USDC_BASE,
+      data: "0x" + data.replace(/^0x/, ""),
+    }],
+  });
+
+  return txHash;
+}
+
 // --- Pay ---
 async function doPay(token: "wld" | "usdc") {
   setPayStatus("Processing...");
@@ -352,7 +413,15 @@ async function doPay(token: "wld" | "usdc") {
     });
     const { reference, payTo } = await initRes.json();
 
-    if (!devMode && !useIDKit) {
+    if (useIDKit) {
+      // Browser wallet payment (USDC on Base)
+      try {
+        txId = await payWithBrowserWallet(payTo);
+      } catch (e: any) {
+        setPayStatus(e.message || "Payment failed. Try again.");
+        return;
+      }
+    } else if (!devMode) {
       // MiniKit Pay — only available inside World App
       const payload: PayCommandInput = {
         reference,
