@@ -4,7 +4,7 @@ Sybil-resistant phone numbers with AI-powered calls and SMS for agents. One Worl
 
 ```bash
 # Add ahoy skill to any agent
-npx skill github:trionlabs/ahoy
+npx skills add github:trionlabs/ahoy
 ```
 
 **ENS:** [ahoy.base.eth](https://www.base.org/name/ahoy) | **API:** [useahoy.app](https://useahoy.app) | **Skill:** [SKILL.md](./SKILL.md)

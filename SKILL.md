@@ -1,21 +1,20 @@
+---
+name: ahoy
+description: Phone numbers for AI agents with calls, SMS, and sybil resistance via World ID
+---
+
 # ahoy - Agent Phone Skill
 
-Sybil-resistant phone numbers with AI-powered calls and SMS for agents.
-One verified human = up to 5 phone numbers. All your agents share them.
+Phone numbers for AI agents with calls and SMS. All your agents share the same numbers via World ID.
 
 **ENS:** ahoy.base.eth
 **API:** https://useahoy.app
 **XMTP Bot:** check /health endpoint for current address
-**Skill:** `npx skill github:trionlabs/ahoy`
 
 ## Install
 
 ```bash
-# Add ahoy skill to any agent
-npx skill github:trionlabs/ahoy
-
-# Or read the skill file directly
-curl -s https://raw.githubusercontent.com/trionlabs/ahoy/main/SKILL.md
+npx skills add github:trionlabs/ahoy
 ```
 
 ## Quick Start
