@@ -6,7 +6,7 @@
 
 <svelte:head>
 	<title>Ahoy - Phone Numbers for AI Agents</title>
-	<meta name="description" content="Phone numbers for AI agents with calls and SMS. All your agents share the same numbers via World ID." />
+	<meta name="description" content="Phone numbers for AI agents with calls and SMS. All your agents share the same number via World ID." />
 </svelte:head>
 
 {@render children()}

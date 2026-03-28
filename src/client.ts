@@ -153,11 +153,11 @@ async function showNumberScreen() {
   });
 
   // Quota
-  $("quota-text").textContent = `${allNumbers.length}/5 numbers`;
+  $("quota-text").textContent = `${allNumbers.length}/1`;
 
   // Show/hide provision button
   const btnProvision = $("btn-provision-new");
-  btnProvision.style.display = allNumbers.length < 5 ? "block" : "none";
+  btnProvision.style.display = allNumbers.length < 1 ? "block" : "none";
 
   // Agent config
   let xmtpAddr = "";

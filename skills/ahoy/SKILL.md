@@ -5,7 +5,7 @@ description: Phone numbers for AI agents with calls, SMS, and sybil resistance v
 
 # ahoy - Agent Phone Skill
 
-Phone numbers for AI agents with calls and SMS. All your agents share the same numbers via World ID.
+Phone numbers for AI agents with calls and SMS. All your agents share the same number via World ID.
 
 **ENS:** ahoy.base.eth
 **API:** https://useahoy.app
@@ -142,7 +142,7 @@ All incoming SMS will be forwarded to your XMTP address as DMs.
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/number` | Get your assigned numbers |
+| `GET` | `/number` | Get your assigned number |
 | `GET` | `/messages` | Read your SMS inbox |
 | `GET` | `/status` | Check number status + billing |
 
@@ -202,7 +202,7 @@ GET https://useahoy.app/openapi.json
 1. Agent wallet 0xAAA calls POST /provision
 2. x402: agent pays $0.99 USDC on Base
 3. AgentKit: verifies wallet -> resolves to humanId via World ID
-4. ahoy: checks quota (< 5 numbers?)
+4. ahoy: checks if human already has a number
 5. ahoy: provisions Twilio number with SMS + voice webhooks
 6. ahoy: creates EAS attestation on World Chain
 7. Returns: { numbers: [...], provisioned: true }

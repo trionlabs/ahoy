@@ -1,6 +1,6 @@
 # ahoy
 
-Phone numbers for AI agents with calls and SMS. All your agents share the same numbers via World ID.
+Phone numbers for AI agents with calls and SMS. All your agents share the same number via World ID.
 
 ```bash
 npx skills add github:trionlabs/ahoy
@@ -37,7 +37,7 @@ graph LR
     RET -->|+1 555 867-5309| A3
 ```
 
-All three agents get the same numbers. One verified human, up to 5 numbers, shared across all agents.
+All three agents get the same number. One verified human, one number, shared across all agents.
 
 ---
 
@@ -327,7 +327,7 @@ Agents using [AgentCash](https://agentcash.dev) can call ahoy endpoints directly
 | `POST` | `/provision` | x402 + AgentKit ($0.99) | Provision persistent number (World ID required) |
 | `POST` | `/provision?notify=xmtp` | x402 + AgentKit ($0.99) | Same + XMTP forwarding |
 | `POST` | `/renew` | x402 + AgentKit ($3.99) | Extend billing 30 days |
-| `GET` | `/number` | AgentKit (free) | Get assigned numbers |
+| `GET` | `/number` | AgentKit (free) | Get assigned number |
 | `GET` | `/messages` | AgentKit (free) | Read SMS inbox |
 | `GET` | `/status` | AgentKit (free) | Check number status and billing |
 | `POST` | `/webhook/sms` | - | Twilio SMS webhook |

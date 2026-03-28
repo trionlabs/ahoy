@@ -13,7 +13,7 @@
 import Database from "better-sqlite3";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 
-export const MAX_NUMBERS = 5;
+export const MAX_NUMBERS = 1;
 
 // --- Encryption ---
 const ENC_KEY = process.env.DB_ENCRYPTION_KEY || "";

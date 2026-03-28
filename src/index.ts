@@ -297,7 +297,7 @@ app.get("/openapi.json", (c) => {
       title: "ahoy",
       description: "Phone numbers for AI agents with calls, SMS, and sybil resistance via World ID. Proof of concept — service may be unstable.",
       version: "0.1.0-poc",
-      "x-guidance": "ahoy provides sybil-resistant phone numbers for AI agents. To get started: 1) Call POST /provision with x402 payment (USDC on World Chain or Base) and AgentKit proof-of-human. You get a real US phone number with SMS and AI-powered voice. 2) Read incoming SMS via GET /messages (free, auth only). 3) To receive SMS via XMTP instead of polling, call POST /provision?notify=xmtp. 4) Call or text the provisioned number - voice calls are answered by Claude AI, SMS stored in inbox. 5) Check billing with GET /status, renew with POST /renew. Each verified human can have up to 5 numbers.",
+      "x-guidance": "ahoy provides sybil-resistant phone numbers for AI agents. To get started: 1) Call POST /provision with x402 payment (USDC on World Chain or Base) and AgentKit proof-of-human. You get a real US phone number with SMS and AI-powered voice. 2) Read incoming SMS via GET /messages (free, auth only). 3) To receive SMS via XMTP instead of polling, call POST /provision?notify=xmtp. 4) Call or text the provisioned number - voice calls are answered by Claude AI, SMS stored in inbox. 5) Check billing with GET /status, renew with POST /renew. Each verified human gets one number, shared across all their agents.",
     },
     servers: [{ url: BASE_URL }],
     paths: {
@@ -317,7 +317,7 @@ app.get("/openapi.json", (c) => {
       },
       "/number": {
         get: {
-          summary: "Get assigned phone number (free, requires AgentKit auth)",
+          summary: "Get your assigned phone number (free, requires AgentKit auth)",
           responses: {
             "200": { description: "Phone number", content: { "application/json": { schema: { type: "object", properties: { phoneNumber: { type: "string" } } } } } },
           },

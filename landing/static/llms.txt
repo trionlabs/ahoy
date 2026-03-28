@@ -27,7 +27,7 @@ POST https://useahoy.app/oneshot/:id/release
 
 ### Persistent number (World ID required, $0.99)
 
-Pay $0.99 via x402 + sign with AgentKit (proof-of-human). Get a permanent US number with 30-day billing, AI voice, XMTP bridge. Up to 5 numbers per human.
+Pay $0.99 via x402 + sign with AgentKit (proof-of-human). Get a permanent US number with 30-day billing, AI voice, XMTP bridge. 1 number per human, shared across all agents.
 
 ```
 POST https://useahoy.app/provision              → { phoneNumber, provisioned: true }
@@ -62,7 +62,7 @@ POST https://useahoy.app/renew                   → { renewed: true }
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | /number | Get assigned phone numbers |
+| GET | /number | Get assigned phone number |
 | GET | /messages | Read SMS inbox (last 50) |
 | GET | /status | Number status and billing info |
 
@@ -94,7 +94,7 @@ POST https://useahoy.app/renew                   → { renewed: true }
 - **SMS:** Receive and read incoming texts via API or XMTP
 - **Voice AI:** Inbound calls answered by Claude-powered assistant, real-time conversation
 - **XMTP Bridge:** Forward SMS to XMTP DMs, send SMS via XMTP commands
-- **Sybil resistance:** 1 World ID = max 5 numbers, on-chain EAS attestation
+- **Sybil resistance:** 1 World ID = 1 number, on-chain EAS attestation
 - **Verify any number:** Check if a phone is backed by a verified human ($0.01)
 
 ## Number Lifecycle
