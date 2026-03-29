@@ -505,7 +505,7 @@ app.get("/verify-phone", (c) => {
   if (!phone) return c.json({ error: "Missing ?phone= parameter" }, 400);
 
   const humanId = getHumanByNumber(phone);
-  if (!humanId) {
+  if (!humanId || humanId.startsWith("oneshot-")) {
     return c.json({ verified: false, phoneNumber: phone });
   }
 
@@ -1058,25 +1058,13 @@ app.post("/app/verify", async (c) => {
     });
   }
 
-  // First-time user: auto-provision only in dev mode, pay screen in production
-  if (DEV_MODE && (await canProvision())) {
-    try {
-      const { phoneNumber: num, sid } = await provisionNumber(BASE_URL);
-      setNumber(humanId, num, sid);
-      await attestProvision(humanId);
-      console.log(`[miniapp] auto-provisioned ${humanId} -> ${num}`);
-    } catch (e) {
-      console.error("[miniapp] auto-provision failed:", e);
-    }
-  }
-
   const sessionToken = createSession(humanId);
   return c.json({
     humanId,
     sessionToken,
     numbers: getNumbersByHuman(humanId),
     verified: true,
-    needsPayment: !DEV_MODE && getNumbersByHuman(humanId).length === 0,
+    needsPayment: getNumbersByHuman(humanId).length === 0,
   });
 });
 
@@ -1203,7 +1191,7 @@ app.get("/app/inbox", (c) => {
   const humanId = c.req.query("humanId");
   const sessionParam = c.req.query("session") ?? null;
   const sessionHumanId = validateSession(sessionParam);
-  if (!sessionHumanId || sessionHumanId !== humanId) {
+  if (!sessionHumanId || !humanId || sessionHumanId !== humanId) {
     return c.json({ error: "Invalid or expired session" }, 401);
   }
   return c.json({ messages: getMessages(humanId) });
