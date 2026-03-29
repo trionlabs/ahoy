@@ -16,16 +16,15 @@ npx skills add github:trionlabs/ahoy
 
 ## Mini App Store
 
-Assets for the World Mini App Store listing. Sources in `launch/sm/`.
+<img src="public/content-card.png" alt="Content card" width="345" />
 
-| File | Dimensions | Purpose |
-|---|---|---|
-| [`content-card.png`](public/content-card.png) | 690x480 | Content card image (345x240 @2x) |
-| [`showcase-1.png`](public/showcase-1.png) | 780x1688 | Verify screen (390x844 @2x) |
-| [`showcase-2.png`](public/showcase-2.png) | 780x1688 | Dashboard -- inbox, number, agent config (390x844 @2x) |
-| [`showcase-3.png`](public/showcase-3.png) | 780x1688 | Features -- SMS, Voice AI, XMTP Bridge (390x844 @2x) |
+<p>
+  <img src="public/showcase-1.png" alt="Verify screen" width="195" />
+  <img src="public/showcase-2.png" alt="Dashboard" width="195" />
+  <img src="public/showcase-3.png" alt="Features" width="195" />
+</p>
 
-To regenerate: edit `.html` sources in `launch/sm/`, render with `npx pageres-cli <file> <size> --crop --scale=2`, copy to `public/`.
+Sources in `launch/sm/`. To regenerate: edit `.html` sources, render with `npx pageres-cli <file> <size> --crop --scale=2`, copy to `public/`.
 
 ---
 
