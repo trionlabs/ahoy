@@ -182,7 +182,6 @@ const routes = {
     extensions: {
       ...declareAgentkitExtension({
         statement: "Renew your phone number for another 30 days",
-        mode: { type: "free-trial" as const, uses: 1 },
       }),
       ...declareDiscoveryExtension({
         bodyType: "json" as const,
@@ -468,6 +467,7 @@ app.post("/provision", async (c) => {
     console.log(`[provision] ${humanId} -> ${phoneNumber} (notify: ${notify || "api"})`);
     return c.json({
       phoneNumber,
+      numbers: getNumbersByHuman(humanId),
       provisioned: true,
       notify: notify || "api",
       ...(attestationUID ? { attestationUID } : {}),
@@ -599,6 +599,7 @@ function getOneshotSession(id: string) {
   if (!session) return null;
   if (Date.now() - session.createdAt > ONESHOT_TTL) {
     oneshotSessions.delete(id);
+    releaseNumberByHuman(session.humanId, session.phoneNumber);
     twilioClient.incomingPhoneNumbers(session.sid).remove().catch(() => {});
     return null;
   }
@@ -975,7 +976,11 @@ app.post("/app/verify", async (c) => {
     action: string;
   };
 
-  if (!WORLD_APP_ID || DEV_MODE) {
+  if (!WORLD_APP_ID && !DEV_MODE) {
+    return c.json({ error: "Server misconfigured: WORLD_APP_ID not set" }, 500);
+  }
+
+  if (DEV_MODE) {
     // Dev mode: accept the nullifier_hash from the mock payload
     const devHumanId = payload.nullifier_hash || `miniapp-${Date.now()}`;
     const devSession = createSession(devHumanId);
