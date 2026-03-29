@@ -14,6 +14,21 @@ npx skills add github:trionlabs/ahoy
 >
 > - [World blog, March 17 2026](https://world.org/blog/announcements/now-available-agentkit-proof-of-human-for-the-agentic-web)
 
+## Mini App Store
+
+Assets for the World Mini App Store listing. Sources in `launch/sm/`.
+
+| File | Dimensions | Purpose |
+|---|---|---|
+| [`content-card.png`](public/content-card.png) | 690x480 | Content card image (345x240 @2x) |
+| [`showcase-1.png`](public/showcase-1.png) | 780x1688 | Verify screen (390x844 @2x) |
+| [`showcase-2.png`](public/showcase-2.png) | 780x1688 | Dashboard -- inbox, number, agent config (390x844 @2x) |
+| [`showcase-3.png`](public/showcase-3.png) | 780x1688 | Features -- SMS, Voice AI, XMTP Bridge (390x844 @2x) |
+
+To regenerate: edit `.html` sources in `launch/sm/`, render with `npx pageres-cli <file> <size> --crop --scale=2`, copy to `public/`.
+
+---
+
 ## Contents
 
 - [Beyond Phone Numbers](#beyond-phone-numbers) - verify-phone for restaurants, ticketing, and more
