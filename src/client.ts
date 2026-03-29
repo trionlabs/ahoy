@@ -245,7 +245,7 @@ async function doVerify() {
         merkle_root: "dev",
         nullifier_hash:
           "dev-human-" + Math.random().toString(36).slice(2, 8),
-        verification_level: "orb",
+        verification_level: "device",
       };
     } else {
       // MiniKit: auto-retry once if first attempt fails (cold start)

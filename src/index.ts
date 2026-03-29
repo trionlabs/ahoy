@@ -648,7 +648,7 @@ app.post("/oneshot/:id/call", async (c) => {
 // POST /oneshot/:id/release — early release (free)
 app.post("/oneshot/:id/release", async (c) => {
   const id = c.req.param("id");
-  const session = oneshotSessions.get(id);
+  const session = getOneshotSession(id);
   if (!session) return c.json({ error: "Session expired or invalid" }, 404);
   oneshotSessions.delete(id);
   releaseNumberByHuman(session.humanId, session.phoneNumber);
@@ -1054,6 +1054,7 @@ app.post("/app/verify", async (c) => {
       humanId,
       numbers: getNumbersByHuman(humanId),
       verified: true,
+      needsPayment: false,
     });
   }
 

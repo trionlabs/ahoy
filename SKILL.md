@@ -188,7 +188,7 @@ GET https://useahoy.app/openapi.json
 
 ```
 1. Agent calls POST /oneshot
-2. x402: agent pays $3.99 USDC on Base
+2. x402: agent pays $0.99 USDC on Base
 3. ahoy provisions a temp Twilio number
 4. Returns: { id: "abc", phoneNumber: "+14155551234", endpoints: {...} }
 5. Agent sends SMS: POST /oneshot/abc/send { to: "+1555...", message: "hello" }

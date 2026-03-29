@@ -78,7 +78,7 @@ export async function initXmtp(): Promise<void> {
       const [, toPhone, body] = match;
       const humanId = addressToHuman.get(senderAddress.toLowerCase());
       if (!humanId) {
-        await ctx.conversation.sendText("Not registered. Use /register <humanId> first.");
+        await ctx.conversation.sendText("Not registered. Provision a number at useahoy.app with ?notify=xmtp to enable XMTP.");
         return;
       }
       const fromPhone = getNumberByHuman(humanId);
@@ -99,7 +99,7 @@ export async function initXmtp(): Promise<void> {
     if (cmd === "/inbox") {
       const humanId = addressToHuman.get(senderAddress.toLowerCase());
       if (!humanId) {
-        await ctx.conversation.sendText("Not registered. Use /register <humanId> first.");
+        await ctx.conversation.sendText("Not registered. Provision a number at useahoy.app with ?notify=xmtp to enable XMTP.");
         return;
       }
       const messages = getMessages(humanId);
