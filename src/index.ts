@@ -73,7 +73,7 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 const PAY_TO = process.env.PAY_TO_ADDRESS as `0x${string}`;
 const FACILITATOR_URL =
   process.env.FACILITATOR_URL ||
-  "https://x402.org/facilitator";
+  "https://x402-worldchain.vercel.app/facilitator";
 const DEV_MODE = process.env.DEV_MODE === "true";
 const WORLD_APP_ID = process.env.WORLD_APP_ID as `app_${string}` | undefined;
 
